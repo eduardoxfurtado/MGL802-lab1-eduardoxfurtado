@@ -34,7 +34,7 @@ import datetime
 from shutil import copy2
 import subprocess
 import time
-from models.PhotosTags import Tag, Photo
+from models.PhotosTags import Tag as photoTag, Photo
 
 #all these are needed to get ffpyplayer working on linux
 
@@ -1176,7 +1176,7 @@ class ScreenAlbum(Screen):
         """
 
         app = App.get_running_app()
-        tag = app.session.query(Tag).filter_by(name=tag_name).first()
+        tag = app.session.query(photoTag).filter_by(name=tag_name).first()
 
         if tag_name and (tag_name.lower() != 'favorite') and (tag is not None):
             return True
@@ -1216,7 +1216,7 @@ class ScreenAlbum(Screen):
         tag_list.clear_widgets()
         tag_list.add_widget(TagSelectButton(type='Tag', text='favorite', target='favorite', owner=self))
         tag_list.add_widget(ShortLabel())
-        for tag in app.session.query(Tag).order_by(Tag.name):
+        for tag in app.session.query(photoTag).order_by(photoTag.name):
             tag_list.add_widget(TagSelectButton(type='Tag', text=tag.name, target=str(tag.id), owner=self))
             tag_list.add_widget(RemoveTagButton(to_remove=tag.name, owner=self))
 
