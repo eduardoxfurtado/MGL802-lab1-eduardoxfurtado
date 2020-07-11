@@ -2066,12 +2066,12 @@ class ScreenAlbum(Screen):
         # initialize empty photo list
         self.photos = []
         #Get photo list using polymorphism
-        self.get_photo_list()
+        self.get_photo_list(app)
 
         #Sort photos using polymorphism
         self.photos = self.sort_photos()
 
-    def get_photo_list(self):
+    def get_photo_list(self, app):
         # the else case, where type is not specified
         self.folder_title = 'Folder: "'+self.target+'"'
         self.photo = app.session.query(Photo).filter_by(id=self.target).first()
@@ -2082,7 +2082,7 @@ class ScreenAlbum(Screen):
         return sorted(self.photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
 
 class Album(ScreenAlbum):
-    def get_photo_list(self):
+    def get_photo_list(self, app):
         self.folder_title = 'Album: "'+self.target+'"'
         for albuminfo in app.albums:
             if albuminfo['name'] == self.target:
@@ -2093,11 +2093,9 @@ class Album(ScreenAlbum):
                         self.photos.append(photoinfo)
 
 class Tag(ScreenAlbum):
-    def get_photo_list(self):
+    def get_photo_list(self, app):
         self.folder_title = 'Tagged As: "'+self.target+'"'
-            self.photos = app.Tag.photos(self.target)
-
-
+        self.photos = app.Tag.photos(self.target)
 
 class Imported(ScreenAlbum):
     sort_method = 'Imported'
