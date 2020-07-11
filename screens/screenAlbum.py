@@ -1077,15 +1077,14 @@ class ScreenAlbum(Screen):
         """Toggles the currently viewed photo as favorite."""
 
         app = App.get_running_app()
-        if not app.database_scanning:
-            if self.target != 'Favorite':
-                app = App.get_running_app()
-                app.Tag.toggle(self.fullpath, 'favorite')
-                photo_info = app.Photo.exist(self.fullpath)
-                self.photos[self.current_photo_index()] = photo_info
-                self.update_tags()
-                self.refresh_all()
-                self.viewer.favorite = self.favorite
+        if not app.database_scanning and self.target != 'Favorite':
+            app = App.get_running_app()
+            app.Tag.toggle(self.fullpath, 'favorite')
+            photo_info = app.Photo.exist(self.fullpath)
+            self.photos[self.current_photo_index()] = photo_info
+            self.update_tags()
+            self.refresh_all()
+            self.viewer.favorite = self.favorite
 
     def delete(self):
         """Begins the delete process.  Just calls 'delete_selected_confirm'.
