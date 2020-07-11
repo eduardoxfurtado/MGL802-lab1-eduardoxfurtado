@@ -2083,33 +2083,33 @@ class ScreenAlbum(Screen):
             self.photos = self.photo.folder.photos
 
         #Sort photos using polymorphism
-        self.photos = self.sort_photos(self.photos)
+        self.photos = self.sort_photos()
 
 
-    def sort_photos(self, photos):
+    def sort_photos(self):
         # all non specified sorting methods:
-        return sorted(photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
+        return sorted(self.photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
 
 class Imported(ScreenAlbum):
     sort_method = 'Imported'
     
-    def sort_photos(self, photos):
-        return sorted(photos, key=lambda x: x.import_date, reverse=self.sort_reverse)
+    def sort_photos(self):
+        return sorted(self.photos, key=lambda x: x.import_date, reverse=self.sort_reverse)
 
 class Modified(ScreenAlbum):
     sort_method = 'Modified'
     
-    def sort_photos(self, photos):
-        return sorted(photos, key=lambda x: x.modify_date, reverse=self.sort_reverse)
+    def sort_photos(self):
+        return sorted(self.photos, key=lambda x: x.modify_date, reverse=self.sort_reverse)
 
 class Owner(ScreenAlbum):
     sort_method = 'Owner'
     
-    def sort_photos(self, photos):
-        return sorted(photos, key=lambda x: x.owner, reverse=self.sort_reverse)
+    def sort_photos(self):
+        return sorted(self.photos, key=lambda x: x.owner, reverse=self.sort_reverse)
 
 class Name(ScreenAlbum):
     sort_method = 'Name'
     
-    def sort_photos(self, photos):
-        return sorted(photos, key=lambda x: os.original_file, reverse=self.sort_reverse)
+    def sort_photos(self):
+        return sorted(self.photos, key=lambda x: os.original_file, reverse=self.sort_reverse)
