@@ -2063,10 +2063,27 @@ class ScreenAlbum(Screen):
 
         app = App.get_running_app()
 
-        #Get photo list
+        # initialize empty photo list
         self.photos = []
-        if self.type == 'Album':
-            self.folder_title = 'Album: "'+self.target+'"'
+        #Get photo list using polymorphism
+        self.get_photo_list()
+
+        #Sort photos using polymorphism
+        self.photos = self.sort_photos()
+
+    def get_photo_list(self):
+        # the else case, where type is not specified
+        self.folder_title = 'Folder: "'+self.target+'"'
+        self.photo = app.session.query(Photo).filter_by(id=self.target).first()
+        self.photos = self.photo.folder.photos
+
+    def sort_photos(self):
+        # all non specified sorting methods:
+        return sorted(self.photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
+
+class Album(ScreenAlbum):
+    def get_photo_list(self):
+        self.folder_title = 'Album: "'+self.target+'"'
             for albuminfo in app.albums:
                 if albuminfo['name'] == self.target:
                     photo_paths = albuminfo['photos']
@@ -2074,21 +2091,13 @@ class ScreenAlbum(Screen):
                         photoinfo = app.Photo.exist(fullpath)
                         if photoinfo:
                             self.photos.append(photoinfo)
-        elif self.type == 'Tag':
-            self.folder_title = 'Tagged As: "'+self.target+'"'
+
+class Tag(ScreenAlbum):
+    def get_photo_list(self):
+        self.folder_title = 'Tagged As: "'+self.target+'"'
             self.photos = app.Tag.photos(self.target)
-        else:
-            self.folder_title = 'Folder: "'+self.target+'"'
-            self.photo = app.session.query(Photo).filter_by(id=self.target).first()
-            self.photos = self.photo.folder.photos
-
-        #Sort photos using polymorphism
-        self.photos = self.sort_photos()
 
 
-    def sort_photos(self):
-        # all non specified sorting methods:
-        return sorted(self.photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
 
 class Imported(ScreenAlbum):
     sort_method = 'Imported'
