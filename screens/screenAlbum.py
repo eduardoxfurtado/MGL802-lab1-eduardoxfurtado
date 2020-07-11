@@ -1344,42 +1344,6 @@ class ScreenAlbum(Screen):
         self.refresh_photolist()
         self.refresh_photoview()
 
-    def refresh_photolist(self):
-        """Reloads and sorts the photo list"""
-
-        app = App.get_running_app()
-
-        #Get photo list
-        self.photos = []
-        if self.type == 'Album':
-            self.folder_title = 'Album: "'+self.target+'"'
-            for albuminfo in app.albums:
-                if albuminfo['name'] == self.target:
-                    photo_paths = albuminfo['photos']
-                    for fullpath in photo_paths:
-                        photoinfo = app.Photo.exist(fullpath)
-                        if photoinfo:
-                            self.photos.append(photoinfo)
-        elif self.type == 'Tag':
-            self.folder_title = 'Tagged As: "'+self.target+'"'
-            self.photos = app.Tag.photos(self.target)
-        else:
-            self.folder_title = 'Folder: "'+self.target+'"'
-            self.photo = app.session.query(Photo).filter_by(id=self.target).first()
-            self.photos = self.photo.folder.photos
-
-        #Sort photos
-        if self.sort_method == 'Imported':
-            sorted_photos = sorted(self.photos, key=lambda x: x.import_date, reverse=self.sort_reverse)
-        elif self.sort_method == 'Modified':
-            sorted_photos = sorted(self.photos, key=lambda x: x.modify_date, reverse=self.sort_reverse)
-        elif self.sort_method == 'Owner':
-            sorted_photos = sorted(self.photos, key=lambda x: x.owner, reverse=self.sort_reverse)
-        elif self.sort_method == 'Name':
-            sorted_photos = sorted(self.photos, key=lambda x: os.original_file, reverse=self.sort_reverse)
-        else:
-            sorted_photos = sorted(self.photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
-        self.photos = sorted_photos
 
     def refresh_photoview(self):
         #refresh recycleview
@@ -2094,4 +2058,39 @@ class ScreenAlbum(Screen):
 
         app.message("Saved edits to image")
 
+    def refresh_photolist(self):
+        """Reloads and sorts the photo list"""
 
+        app = App.get_running_app()
+
+        #Get photo list
+        self.photos = []
+        if self.type == 'Album':
+            self.folder_title = 'Album: "'+self.target+'"'
+            for albuminfo in app.albums:
+                if albuminfo['name'] == self.target:
+                    photo_paths = albuminfo['photos']
+                    for fullpath in photo_paths:
+                        photoinfo = app.Photo.exist(fullpath)
+                        if photoinfo:
+                            self.photos.append(photoinfo)
+        elif self.type == 'Tag':
+            self.folder_title = 'Tagged As: "'+self.target+'"'
+            self.photos = app.Tag.photos(self.target)
+        else:
+            self.folder_title = 'Folder: "'+self.target+'"'
+            self.photo = app.session.query(Photo).filter_by(id=self.target).first()
+            self.photos = self.photo.folder.photos
+
+        #Sort photos
+        if self.sort_method == 'Imported':
+            sorted_photos = sorted(self.photos, key=lambda x: x.import_date, reverse=self.sort_reverse)
+        elif self.sort_method == 'Modified':
+            sorted_photos = sorted(self.photos, key=lambda x: x.modify_date, reverse=self.sort_reverse)
+        elif self.sort_method == 'Owner':
+            sorted_photos = sorted(self.photos, key=lambda x: x.owner, reverse=self.sort_reverse)
+        elif self.sort_method == 'Name':
+            sorted_photos = sorted(self.photos, key=lambda x: os.original_file, reverse=self.sort_reverse)
+        else:
+            sorted_photos = sorted(self.photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
+        self.photos = sorted_photos
