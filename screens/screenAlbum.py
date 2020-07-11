@@ -2084,13 +2084,13 @@ class ScreenAlbum(Screen):
 class Album(ScreenAlbum):
     def get_photo_list(self):
         self.folder_title = 'Album: "'+self.target+'"'
-            for albuminfo in app.albums:
-                if albuminfo['name'] == self.target:
-                    photo_paths = albuminfo['photos']
-                    for fullpath in photo_paths:
-                        photoinfo = app.Photo.exist(fullpath)
-                        if photoinfo:
-                            self.photos.append(photoinfo)
+        for albuminfo in app.albums:
+            if albuminfo['name'] == self.target:
+                photo_paths = albuminfo['photos']
+                for fullpath in photo_paths:
+                    photoinfo = app.Photo.exist(fullpath)
+                    if photoinfo:
+                        self.photos.append(photoinfo)
 
 class Tag(ScreenAlbum):
     def get_photo_list(self):
