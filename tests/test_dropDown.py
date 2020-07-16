@@ -51,6 +51,7 @@ class ButtonTestCase(GraphicUnitTest):
 
 
     def test_AlbumSortDropDown(self):
+        print(16)
         self.advance_frames(100)
         from generalElements.dropDowns.AlbumSortDropDown import AlbumSortDropDown
         from generalElements.buttons.MenuButton import MenuButton
