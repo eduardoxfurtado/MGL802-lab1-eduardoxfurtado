@@ -21,10 +21,6 @@ fileConfig(config.config_file_name)
 # export PYTHONPATH='.'
 from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
-
-
-
-
 target_metadata = [Base.metadata]
 
 # other values from the config, defined by the needs of env.py,
