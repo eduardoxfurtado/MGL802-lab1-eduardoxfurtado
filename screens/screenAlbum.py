@@ -1311,20 +1311,17 @@ class ScreenAlbum(Screen):
         prev_photo_info = self.photos[current_photo_index-1]
         next_photo_filename = os.path.join(next_photo_info[2], next_photo_info[0])
         prev_photo_filename = os.path.join(prev_photo_info[2], prev_photo_info[0])
-        if next_photo_filename != self.photo and os.path.splitext(next_photo_filename)[1].lower() in imagetypes:
+        
+        self.cache_nearby_images_load(next_photo, next_photo_filename)
+        self.cache_nearby_images_load(prev_photo, prev_photo_filename)
+
+    def cache_nearby_images_load(self, photo, photo_filename):
+        if photo_filename != self.photo and os.path.splitext(photo_filename)[1].lower() in imagetypes:
             try:
-                if os.path.splitext(next_photo_filename)[1].lower() == '.bmp':
-                    next_photo = ImageLoaderPIL(next_photo_filename)
+                if os.path.splitext(photo_filename)[1].lower() == '.bmp':
+                    photo = ImageLoaderPIL(photo_filename)
                 else:
-                    next_photo = Loader.image(next_photo_filename)
-            except:
-                pass
-        if prev_photo_filename != self.photo and os.path.splitext(prev_photo_filename)[1].lower() in imagetypes:
-            try:
-                if os.path.splitext(prev_photo_filename)[1].lower() == '.bmp':
-                    next_photo = ImageLoaderPIL(prev_photo_filename)
-                else:
-                    prev_photo = Loader.image(prev_photo_filename)
+                    photo = Loader.image(photo_filename)
             except:
                 pass
 
