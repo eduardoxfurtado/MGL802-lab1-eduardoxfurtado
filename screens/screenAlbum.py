@@ -1030,26 +1030,35 @@ class ScreenAlbum(Screen):
             pass
         else:
             if not self.popup or (not self.popup.open):
-                if key == 'left' or key == 'up':
-                    self.previous_photo()
-                if key == 'right' or key == 'down':
-                    self.next_photo()
-                if key == 'enter':
-                    if self.viewer:
-                        self.viewer.fullscreen = not self.viewer.fullscreen
-                if key == 'space':
-                    self.set_favorite()
-                if key == 'delete':
-                    self.delete()
-                if key == 'f2':
-                    self.show_info_panel()
-                if key == 'f3':
-                    self.show_edit_panel()
-                if key == 'f4':
-                    self.show_tags_panel()
+                self.arrow_key(key)
+                self.action_key(key)
+                self.function_key(key)
             elif self.popup and self.popup.open:
                 if key == 'enter':
                     self.popup.content.dispatch('on_answer', 'yes')
+
+    def arrow_key (self, key):
+        if key == 'left' or key == 'up':
+            self.previous_photo()
+        if key == 'right' or key == 'down':
+            self.next_photo()
+    
+    def function_key (self, key):
+        if key == 'f2':
+            self.show_info_panel()
+        if key == 'f3':
+            self.show_edit_panel()
+        if key == 'f4':
+            self.show_tags_panel()
+    
+    def action_key (self, key):
+        if key == 'enter':
+            if self.viewer:
+                self.viewer.fullscreen = not self.viewer.fullscreen
+        if key == 'space':
+            self.set_favorite()
+        if key == 'delete':
+            self.delete()
 
     def next_photo(self):
         """Changes the viewed photo to the next photo in the album index."""
