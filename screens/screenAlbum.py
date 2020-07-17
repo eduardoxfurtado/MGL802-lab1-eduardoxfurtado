@@ -720,7 +720,8 @@ class ScreenAlbum(Screen):
         input_size = input_metadata['src_vid_size']
         input_file_folder, input_filename = os.path.split(input_file)
         output_file_folder = input_file_folder+os.path.sep+'reencode'
-        input_setting_class = InputSettingClass(input_file_folder, input_filename, input_size, framerate=framerate, pixel_format=pixel_format)
+        input_file_attribute = FileAttribute(input_file_folder, input_filename)
+        input_setting_class = InputSettingClass(input_file_attribute, input_size, framerate=framerate, pixel_format=pixel_format)
         command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, start=start_seconds, duration=duration_seconds)
         if not command_valid:
             self.cancel_encode()
@@ -1800,7 +1801,8 @@ class ScreenAlbum(Screen):
         duration = edit_image.length
         self.total_frames = (duration * (end_point - start_point)) * (framerate[0] / framerate[1])
         start_frame = int(self.total_frames * start_point)
-        input_setting_class = InputSettingClass(input_file_folder, input_filename, input_size, input_file='-', images=True, framerate=framerate, pixel_format=pixel_format)
+        input_file_attribute = FileAttribute('-', input_file_folder, input_filename)
+        input_setting_class = InputSettingClass(input_file_attribute, input_size, images=True, framerate=framerate, pixel_format=pixel_format)
         command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, noaudio=True, encoding_settings=encoding_settings)
         if not command_valid:
             self.failed_encode('Command not valid: '+command)
@@ -2235,11 +2237,15 @@ class Name(ScreenAlbum):
         return sorted(self.photos, key=lambda x: os.original_file, reverse=self.sort_reverse)
 
 class InputSettingClass(ScreenAlbum):
-    def __init__(self, folder, filename, size, images=False, input_file=None, framerate=None, pixel_format=None):
-        self.folder = folder
-        self.filename = filename
+    def __init__(self, file_attribute, size, images=False, framerate=None, pixel_format=None):
+        self.file_attribute = file_attribute
         self.size = size
         self.images = images
-        self.input_file = input_file
         self.framerate = framerate
         self.pixel_format = pixel_format
+
+class FileAttribute(ScreenAlbum):
+    def __init__(self, file_object = None, folder, filename):
+        self.file_object = file_object
+        self.folder = folder
+        self.filename = filename
