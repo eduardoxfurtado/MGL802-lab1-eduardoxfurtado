@@ -516,7 +516,15 @@ class ScreenAlbum(Screen):
         command = 'ffmpeg -i "'+video_file+'"'+seek+' -i "'+audio_file+'" -map 0:v -map 1:a -codec copy '+audio_codec_settings+' '+audio_bitrate_settings+' -shortest "'+output_file+'"'
         return [True, command, output_filename]
 
-    def get_ffmpeg_command(self, input_folder, input_filename, output_file_folder, input_size, noaudio=False, input_images=False, input_file=None, input_framerate=None, input_pixel_format=None, encoding_settings=None, start=None, duration=None):
+    def get_ffmpeg_command(self, input_setting_class, output_file_folder, noaudio=False, encoding_settings=None, start=None, duration=None):
+        input_folder = input_setting_class.folder
+        input_filename = input_setting_class.filename
+        input_size = input_setting_class.size
+        input_images = input_setting_class.images
+        input_file = input_setting_class.file
+        input_framerate = input_setting_class.framerate
+        input_pixel_format = input_setting_class.pixel_format
+
         if not encoding_settings:
             encoding_settings = self.encoding_settings
         if encoding_settings['file_format'].lower() == 'auto':
@@ -712,7 +720,8 @@ class ScreenAlbum(Screen):
         input_size = input_metadata['src_vid_size']
         input_file_folder, input_filename = os.path.split(input_file)
         output_file_folder = input_file_folder+os.path.sep+'reencode'
-        command_valid, command, output_filename = self.get_ffmpeg_command(input_file_folder, input_filename, output_file_folder, input_size, input_framerate=framerate, input_pixel_format=pixel_format, start=start_seconds, duration=duration_seconds)
+        input_setting_class = InputSettingClass(input_file_folder, input_filename, input_size, input_framerate=framerate, input_pixel_format=pixel_format)
+        command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, start=start_seconds, duration=duration_seconds)
         if not command_valid:
             self.cancel_encode()
             self.dismiss_popup()
@@ -1791,7 +1800,8 @@ class ScreenAlbum(Screen):
         duration = edit_image.length
         self.total_frames = (duration * (end_point - start_point)) * (framerate[0] / framerate[1])
         start_frame = int(self.total_frames * start_point)
-        command_valid, command, output_filename = self.get_ffmpeg_command(input_file_folder, input_filename, output_file_folder, input_size, noaudio=True, input_file='-', input_images=True, input_framerate=framerate, input_pixel_format=pixel_format, encoding_settings=encoding_settings)
+        input_setting_class = InputSettingClass(input_file_folder, input_filename, input_size, input_file='-', input_images=True, input_framerate=framerate, input_pixel_format=pixel_format)
+        command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, noaudio=True, encoding_settings=encoding_settings)
         if not command_valid:
             self.failed_encode('Command not valid: '+command)
             return
@@ -2223,3 +2233,13 @@ class Name(ScreenAlbum):
     
     def sort_photos(self):
         return sorted(self.photos, key=lambda x: os.original_file, reverse=self.sort_reverse)
+
+class InputSettingClass(ScreenAlbum):
+    def __init__(self, folder, filename, size, images=False, input_file=None, framerate=None, pixel_format=None):
+        self.folder = folder
+        self.filename = filename
+        self.size = size
+        self.images = images
+        self.input_file = input_file
+        self.framerate = framerate
+        self.pixel_format = pixel_format
