@@ -730,127 +730,30 @@ class ScreenAlbum(Screen):
         print(command)
 
         output_file = output_file_folder+os.path.sep+output_filename
-        if not os.path.isdir(output_file_folder):
-            try:
-                os.makedirs(output_file_folder)
-            except:
-                self.cancel_encode()
-                self.dismiss_popup()
-                app.popup_message(text='Could not create folder for encode.', title='Warning')
-                return
-        if os.path.isfile(output_file):
-            try:
-                os.remove(output_file)
-            except:
-                self.cancel_encode()
-                self.dismiss_popup()
-                app.popup_message(text='Could not create new encode, file already exists.', title='Warning')
-                return
+        warning_create_new_encode = self.create_new_encode(app, output_file_folder, output_file)
+        if (warning_create_new_encode):
+            return
 
         #used to have 'shell=True' in arguments, is it still needed?
         self.encoding_process_thread = subprocess.Popen(command, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
 
         # Poll process for new output until finished
-        progress = []
-        while True:
-            if self.cancel_encoding:
-                self.encoding_process_thread.kill()
-                if os.path.isfile(output_file):
-                    self.delete_output(output_file)
-                if not os.listdir(output_file_folder):
-                    os.rmdir(output_file_folder)
-                self.dismiss_popup()
-                return
-            nextline = self.encoding_process_thread.stdout.readline()
-            if nextline == '' and self.encoding_process_thread.poll() is not None:
-                break
-            if nextline.startswith('frame= '):
-                self.current_frame = int(nextline.split('frame=')[1].split('fps=')[0].strip())
-                scanning_percentage = self.current_frame / self.total_frames * 100
-                self.popup.scanning_percentage = scanning_percentage
-                #time_done = nextline.split('time=')[1].split('bitrate=')[0].strip()
-                elapsed_time = time.time() - start_time
-                time_done = time_index(elapsed_time)
-                remaining_frames = self.total_frames - self.current_frame
-                try:
-                    fps = float(nextline.split('fps=')[1].split('q=')[0].strip())
-                    seconds_left = remaining_frames / fps
-                    time_remaining = time_index(seconds_left)
-                    time_text = "  Time: "+time_done+"  Remaining: "+time_remaining
-                except:
-                    time_text = ""
-                self.popup.scanning_text = str(str(int(scanning_percentage)))+"%"+time_text
-                progress.append(self.current_frame)
-            sys.stdout.write(nextline)
-            sys.stdout.flush()
+        warning_poll_process_for_new_output_file = self.poll_process_for_new_output_file(output_file_folder, output_file)
+        if (warning_poll_process_for_new_output_file):
+            return
 
         output = self.encoding_process_thread.communicate()[0]
         exit_code = self.encoding_process_thread.returncode
 
-        error_code = ''
         if exit_code == 0:
             #encoding completed
             self.dismiss_popup()
-            good_file = True
-
-            if os.path.isfile(output_file):
-                output_video = MediaPlayer(output_file, ff_opts={'paused': True, 'ss': 1.0, 'an': True})
-                frame = None
-                while not frame:
-                    frame, value = output_video.get_frame(force_refresh=True)
-                output_metadata = output_video.get_metadata()
-                output_video.close_player()
-                output_video = None
-                if output_metadata:
-                    if self.encoding_settings['width'] and self.encoding_settings['height']:
-                        new_size = (int(self.encoding_settings['width']), int(self.encoding_settings['height']))
-                        if output_metadata['src_vid_size'] != new_size:
-                            error_code = ', Output size is incorrect'
-                            good_file = False
-                else:
-                    error_code = ', Unable to find output file metadata'
-                    good_file = False
-            else:
-                error_code = ', Output file not found'
-                good_file = False
-
-            if not good_file:
-                Clock.schedule_once(lambda x: app.message('Warning: Encoded file may be bad'+error_code))
-
-            new_original_file = input_file_folder+os.path.sep+'.originals'+os.path.sep+input_filename
-            if not os.path.isdir(input_file_folder+os.path.sep+'.originals'):
-                os.makedirs(input_file_folder+os.path.sep+'.originals')
-            new_encoded_file = input_file_folder+os.path.sep+output_filename
-            if not os.path.isfile(new_original_file) and os.path.isfile(output_file):
-                try:
-                    os.rename(input_file, new_original_file)
-                    os.rename(output_file, new_encoded_file)
-                    if not os.listdir(output_file_folder):
-                        os.rmdir(output_file_folder)
-
-                    #update screenDatabase
-                    extension = os.path.splitext(output_file)[1]
-                    new_photoinfo = list(self.photoinfo)
-                    new_photoinfo[0] = os.path.splitext(self.photoinfo[0])[0]+extension  #fix extension
-                    new_photoinfo[7] = int(os.path.getmtime(new_encoded_file))  #update modified date
-                    new_photoinfo[9] = 1  #set edited
-                    new_photoinfo[10] = new_original_file  #set original file
-                    if self.photoinfo[0] != new_photoinfo[0]:
-                        app.Photo.rename(self.photoinfo[0], new_photoinfo[0], new_photoinfo[1])
-                    app.Photo.update(new_photoinfo)
-
-                    # reload video in ui
-                    self.fullpath = local_path(new_photoinfo[0])
-                    newpath = os.path.join(local_path(new_photoinfo[2]), local_path(new_photoinfo[0]))
-                    Clock.schedule_once(lambda x: self.set_photo(newpath))
-
-                except:
-                    app.popup_message(text='Could not replace original file', title='Warning')
-                    return
-            else:
-                app.popup_message(text='Target file name already exists! Encoded file left in "/reencode" subfolder', title='Warning')
+            self.check_file(app, output_file)
+            input_file_attribute = FileAttribute(input_file, input_file_folder, input_filename)
+            output_file_attribute = FileAttribute(output_file, output_file_folder, output_filename)
+            warning_remplace_original_file = self.remplace_original_file(app, input_file_attribute, output_file_attribute)
+            if (warning_remplace_original_file):
                 return
-            Clock.schedule_once(lambda x: app.message("Completed encoding file '"+self.photo+"'"))
         else:
             self.dismiss_popup()
             if os.path.isfile(output_file):
@@ -863,6 +766,137 @@ class ScreenAlbum(Screen):
 
         #switch active video in photo list back to image
         self.show_selected()
+
+    def create_new_encode(self, app, output_file_folder, output_file):
+        if not os.path.isdir(output_file_folder):
+            try:
+                os.makedirs(output_file_folder)
+            except:
+                self.cancel_encode()
+                self.dismiss_popup()
+                app.popup_message(text='Could not create folder for encode.', title='Warning')
+                return True
+        if os.path.isfile(output_file):
+            try:
+                os.remove(output_file)
+            except:
+                self.cancel_encode()
+                self.dismiss_popup()
+                app.popup_message(text='Could not create new encode, file already exists.', title='Warning')
+                return True
+        return False
+    
+    def poll_process_for_new_output_file(self, output_file_folder, output_file):
+        progress = []
+        while True:
+            if self.cancel_encoding:
+                self.encoding_process_thread.kill()
+                if os.path.isfile(output_file):
+                    self.delete_output(output_file)
+                if not os.listdir(output_file_folder):
+                    os.rmdir(output_file_folder)
+                self.dismiss_popup()
+                return True
+            nextline = self.encoding_process_thread.stdout.readline()
+            if nextline == '' and self.encoding_process_thread.poll() is not None:
+                break
+            if nextline.startswith('frame= '):
+                self.current_frame = int(nextline.split('frame=')[1].split('fps=')[0].strip())
+                scanning_percentage = self.current_frame / self.total_frames * 100
+                self.popup.scanning_percentage = scanning_percentage
+                #time_done = nextline.split('time=')[1].split('bitrate=')[0].strip()
+                elapsed_time = time.time() - start_time
+                time_done = time_index(elapsed_time)
+                remaining_frames = self.total_frames - self.current_frame
+                self.set_time_text(remaining_frames, time_index, time_done)
+                self.popup.scanning_text = str(str(int(scanning_percentage)))+"%"+time_text
+                progress.append(self.current_frame)
+            sys.stdout.write(nextline)
+            sys.stdout.flush()
+        return False
+    
+    def set_time_text(self, remaining_frames, time_index, time_done):
+        try:
+            fps = float(nextline.split('fps=')[1].split('q=')[0].strip())
+            seconds_left = remaining_frames / fps
+            time_remaining = time_index(seconds_left)
+            time_text = "  Time: "+time_done+"  Remaining: "+time_remaining
+        except:
+            time_text = ""
+        return time_text
+    
+    def check_file(self, app, output_file):
+        good_file = True
+        error_code = ''
+        if os.path.isfile(output_file):
+            output_video = MediaPlayer(output_file, ff_opts={'paused': True, 'ss': 1.0, 'an': True})
+            frame = None
+            while not frame:
+                frame, value = output_video.get_frame(force_refresh=True)
+            output_metadata = output_video.get_metadata()
+            output_video.close_player()
+            output_video = None
+            if output_metadata:
+                if self.encoding_settings['width'] and self.encoding_settings['height']:
+                    new_size = (int(self.encoding_settings['width']), int(self.encoding_settings['height']))
+                    if output_metadata['src_vid_size'] != new_size:
+                        error_code = ', Output size is incorrect'
+                        good_file = False
+            else:
+                error_code = ', Unable to find output file metadata'
+                good_file = False
+        else:
+            error_code = ', Output file not found'
+            good_file = False
+        self.check_file_message(app, good_file, error_code)
+        
+    
+    def check_file_message(self, app, good_file, error_code):
+        if not good_file:
+            Clock.schedule_once(lambda x: app.message('Warning: Encoded file may be bad'+error_code))
+
+    def remplace_original_file(self, app, input_file_attribute, output_file_attribute):
+        input_file = input_file_attribute.file_object
+        input_file_folder = input_file_attribute.folder
+        input_filename = input_file_attribute.filename
+        output_file = output_file_attribute.file_object
+        output_file_folder = output_file_attribute.folder
+        output_filename = output_file_attribute.filename
+        new_original_file = input_file_folder+os.path.sep+'.originals'+os.path.sep+input_filename
+        if not os.path.isdir(input_file_folder+os.path.sep+'.originals'):
+            os.makedirs(input_file_folder+os.path.sep+'.originals')
+        new_encoded_file = input_file_folder+os.path.sep+output_filename
+        if not os.path.isfile(new_original_file) and os.path.isfile(output_file):
+            try:
+                os.rename(input_file, new_original_file)
+                os.rename(output_file, new_encoded_file)
+                if not os.listdir(output_file_folder):
+                    os.rmdir(output_file_folder)
+
+                #update screenDatabase
+                extension = os.path.splitext(output_file)[1]
+                new_photoinfo = list(self.photoinfo)
+                new_photoinfo[0] = os.path.splitext(self.photoinfo[0])[0]+extension  #fix extension
+                new_photoinfo[7] = int(os.path.getmtime(new_encoded_file))  #update modified date
+                new_photoinfo[9] = 1  #set edited
+                new_photoinfo[10] = new_original_file  #set original file
+                if self.photoinfo[0] != new_photoinfo[0]:
+                    app.Photo.rename(self.photoinfo[0], new_photoinfo[0], new_photoinfo[1])
+                app.Photo.update(new_photoinfo)
+
+                # reload video in ui
+                self.fullpath = local_path(new_photoinfo[0])
+                newpath = os.path.join(local_path(new_photoinfo[2]), local_path(new_photoinfo[0]))
+                Clock.schedule_once(lambda x: self.set_photo(newpath))
+
+            except:
+                app.popup_message(text='Could not replace original file', title='Warning')
+                return True
+        else:
+            app.popup_message(text='Target file name already exists! Encoded file left in "/reencode" subfolder', title='Warning')
+            return True
+        Clock.schedule_once(lambda x: app.message("Completed encoding file '"+self.photo+"'"))
+        return False
 
     def set_photo(self, photo):
         self.photo = photo
