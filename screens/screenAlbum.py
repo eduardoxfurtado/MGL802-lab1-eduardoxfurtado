@@ -893,20 +893,11 @@ class ScreenAlbum(Screen):
         edited_filename = os.path.split(edited_file)[1]
         new_original_file = os.path.join(os.path.split(edited_file)[0], original_filename)
         if os.path.isfile(original_file):
-            if os.path.isfile(edited_file):
-                try:
-                    os.remove(edited_file)
-                except:
-                    pass
-            if os.path.isfile(edited_file):
-                app.popup_message(text='Could not restore original file', title='Warning')
+            self.remove_file(edited_file)
+            if self.catch_exception_remove(edited_file):
                 return
-            try:
-                os.rename(original_file, new_original_file)
-            except:
-                pass
-            if os.path.isfile(original_file) or not os.path.isfile(new_original_file):
-                app.popup_message(text='Could not restore original file', title='Warning')
+            self.rename_file(original_file, new_original_file)
+            if self.catch_exception_rename(original_file, new_original_file):
                 return
 
             #update photo info
@@ -948,6 +939,31 @@ class ScreenAlbum(Screen):
             self.show_selected()
         else:
             app.popup_message(text='Could not find original file', title='Warning')
+
+    def remove_file(self, edited_file):
+        if os.path.isfile(edited_file):
+            try:
+                os.remove(edited_file)
+            except:
+                pass
+    
+    def catch_exception_remove(self, edited_file):
+        if os.path.isfile(edited_file):
+            app.popup_message(text='Could not restore original file', title='Warning')
+            return True
+        return False
+    
+    def rename_file(self, original_file, new_original_file):
+        try:
+            os.rename(original_file, new_original_file)
+        except:
+            pass
+
+    def catch_exception_rename(self, original_file, new_original_file):
+        if os.path.isfile(original_file) or not os.path.isfile(new_original_file):
+            app.popup_message(text='Could not restore original file', title='Warning')
+            return True
+        return False
 
     def set_edit_panel(self, panelname):
         """Switches the current edit panel to another.
