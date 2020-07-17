@@ -1675,58 +1675,6 @@ class ScreenAlbum(Screen):
         self.edit_panel = 'main'
         Clock.schedule_once(lambda *dt: self.update_edit_panel())
 
-    def update_edit_panel(self):
-        """Set up the edit panel with the current preset."""
-
-        if self.viewer and isfile2(self.photo):
-            self.viewer.stop()
-            if self.edit_panel_object:
-                self.edit_panel_object.save_last()
-            self.viewer.edit_mode = self.edit_panel
-            edit_panel_container = self.ids['panelEdit']
-            if self.edit_panel == 'main':
-                self.edit_panel_object = EditMain(owner=self)
-                self.edit_panel_object.update_programs()
-                self.viewer.bypass = False
-            else:
-                self.viewer.bypass = True
-                self.viewer.stop()
-                if self.edit_panel == 'color':
-                    self.edit_panel_object = EditColorImage(owner=self)
-                    self.viewer.edit_image.bind(histogram=self.edit_panel_object.draw_histogram)
-                elif self.edit_panel == 'advanced':
-                    self.edit_panel_object = EditColorImageAdvanced(owner=self)
-                    self.viewer.edit_image.bind(histogram=self.edit_panel_object.draw_histogram)
-                elif self.edit_panel == 'filter':
-                    self.edit_panel_object = EditFilterImage(owner=self)
-                elif self.edit_panel == 'border':
-                    self.edit_panel_object = EditBorderImage(owner=self)
-                elif self.edit_panel == 'denoise':
-                    if opencv:
-                        self.edit_panel_object = EditDenoiseImage(owner=self, imagefile=self.photo, image_x=self.viewer.edit_image.original_width, image_y=self.viewer.edit_image.original_height)
-                    else:
-                        self.edit_panel = 'main'
-                        app = App.get_running_app()
-                        app.message("Could Not Denoise, OpenCV Not Found")
-                elif self.edit_panel == 'crop':
-                    self.edit_panel_object = EditCropImage(owner=self, image_x=self.viewer.edit_image.original_width, image_y=self.viewer.edit_image.original_height)
-                    self.viewer.edit_image.crop_controls = self.edit_panel_object
-                elif self.edit_panel == 'rotate':
-                    self.edit_panel_object = EditRotateImage(owner=self)
-                elif self.edit_panel == 'convert':
-                    if self.view_image:
-                        self.edit_panel_object = EditConvertImage(owner=self)
-                    else:
-                        self.edit_panel_object = EditConvertVideo(owner=self)
-            edit_panel_container.change_panel(self.edit_panel_object)
-        else:
-            if self.edit_panel_object:
-                self.edit_panel_object.save_last()
-            self.viewer.edit_mode = self.edit_panel
-            edit_panel_container = self.ids['panelEdit']
-            edit_panel_container.change_panel(None)
-            self.edit_panel_object = EditNone(owner=self)
-
     def save_edit(self):
         if self.view_image:
             self.save_image()
@@ -2108,6 +2056,91 @@ class ScreenAlbum(Screen):
     def sort_photos(self):
         # all non specified sorting methods:
         return sorted(self.photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
+
+    def update_edit_panel(self):
+        """Set up the edit panel with the current preset."""
+
+        if self.viewer and isfile2(self.photo):
+            self.viewer.stop()
+            if self.edit_panel_object:
+                self.edit_panel_object.save_last()
+            self.viewer.edit_mode = self.edit_panel
+            edit_panel_container = self.ids['panelEdit']
+            if self.edit_panel == 'main':
+                self.edit_panel_object = EditMain(owner=self)
+                self.edit_panel_object.update_programs()
+                self.viewer.bypass = False
+            else:
+                self.viewer.bypass = True
+                self.viewer.stop()
+                self.set_typeOf_edit_panel()
+            edit_panel_container.change_panel(self.edit_panel_object)
+        else:
+            if self.edit_panel_object:
+                self.edit_panel_object.save_last()
+            self.viewer.edit_mode = self.edit_panel
+            edit_panel_container = self.ids['panelEdit']
+            edit_panel_container.change_panel(None)
+            self.edit_panel_object = EditNone(owner=self)
+
+class ColorEditPanel(ScreenAlbum):
+    edit_panel = 'color'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditColorImage(owner=self)
+        self.viewer.edit_image.bind(histogram=self.edit_panel_object.draw_histogram)
+
+class AdvancedEditPanel(ScreenAlbum):
+    edit_panel = 'advanced'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditColorImageAdvanced(owner=self)
+        self.viewer.edit_image.bind(histogram=self.edit_panel_object.draw_histogram)
+
+class FilterEditPanel(ScreenAlbum):
+    edit_panel = 'filter'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditFilterImage(owner=self)
+
+class BorderEditPanel(ScreenAlbum):
+    edit_panel = 'border'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditBorderImage(owner=self)
+
+class DenoiseEditPanel(ScreenAlbum):
+    edit_panel = 'denoise'
+
+    def set_typeOf_edit_panel(self):
+        if opencv:
+            self.edit_panel_object = EditDenoiseImage(owner=self, imagefile=self.photo, image_x=self.viewer.edit_image.original_width, image_y=self.viewer.edit_image.original_height)
+        else:
+            self.edit_panel = 'main'
+            app = App.get_running_app()
+            app.message("Could Not Denoise, OpenCV Not Found")
+
+class CropEditPanel(ScreenAlbum):
+    edit_panel = 'crop'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditCropImage(owner=self, image_x=self.viewer.edit_image.original_width, image_y=self.viewer.edit_image.original_height)
+        self.viewer.edit_image.crop_controls = self.edit_panel_object
+
+class RotateEditPanel(ScreenAlbum):
+    edit_panel = 'rotate'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditRotateImage(owner=self)
+
+class ConvertEditPanel(ScreenAlbum):
+    edit_panel = 'convert'
+
+    def set_typeOf_edit_panel(self):
+        if self.view_image:
+            self.edit_panel_object = EditConvertImage(owner=self)
+        else:
+            self.edit_panel_object = EditConvertVideo(owner=self)
 
 class Album(ScreenAlbum):
     def get_photo_list(self, app):
