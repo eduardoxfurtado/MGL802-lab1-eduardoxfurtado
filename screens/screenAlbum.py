@@ -1269,23 +1269,7 @@ class ScreenAlbum(Screen):
         container = self.ids['photoViewerContainer']
         container.clear_widgets()
         self.photoinfo = app.session.query(Photo).filter_by(id=self.photo).first()
-        if self.photoinfo:
-            self.orientation = self.photoinfo.orientation
-        else:
-            self.orientation = 1
-            self.photoinfo = app.null_image()
-        if self.orientation == 3 or self.orientation == 4:
-            self.angle = 180
-        elif self.orientation == 5 or self.orientation == 6:
-            self.angle = 270
-        elif self.orientation == 7 or self.orientation == 8:
-            self.angle = 90
-        else:
-            self.angle = 0
-        if self.orientation in [2, 4, 5, 7]:
-            self.mirror = True
-        else:
-            self.mirror = False
+        self.set_angle_and_mirror(app, photoinfo)
 
         if self.photoinfo.is_photo():
             #a photo is selected
@@ -1317,6 +1301,26 @@ class ScreenAlbum(Screen):
             self.imagecache.start()
         self.set_edit_panel('main')  #Clear the edit panel
         #self.ids['album'].selected = self.fullpath
+
+    def set_angle_and_mirror(self, app, photoinfo): 
+        if photoinfo:
+            self.orientation = self.photoinfo.orientation
+        else:
+            self.orientation = 1
+            self.photoinfo = app.null_image()
+        if self.orientation == 3 or self.orientation == 4:
+            self.angle = 180
+        elif self.orientation == 5 or self.orientation == 6:
+            self.angle = 270
+        elif self.orientation == 7 or self.orientation == 8:
+            self.angle = 90
+        else:
+            self.angle = 0
+        if self.orientation in [2, 4, 5, 7]:
+            self.mirror = True
+        else:
+            self.mirror = False
+
 
     def cache_nearby_images(self):
         """Determines the next and previous images in the list, and caches them to speed up browsing."""
