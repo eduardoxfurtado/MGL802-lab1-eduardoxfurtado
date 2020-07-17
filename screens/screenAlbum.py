@@ -720,7 +720,7 @@ class ScreenAlbum(Screen):
         input_size = input_metadata['src_vid_size']
         input_file_folder, input_filename = os.path.split(input_file)
         output_file_folder = input_file_folder+os.path.sep+'reencode'
-        input_setting_class = InputSettingClass(input_file_folder, input_filename, input_size, input_framerate=framerate, input_pixel_format=pixel_format)
+        input_setting_class = InputSettingClass(input_file_folder, input_filename, input_size, framerate=framerate, pixel_format=pixel_format)
         command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, start=start_seconds, duration=duration_seconds)
         if not command_valid:
             self.cancel_encode()
@@ -1800,7 +1800,7 @@ class ScreenAlbum(Screen):
         duration = edit_image.length
         self.total_frames = (duration * (end_point - start_point)) * (framerate[0] / framerate[1])
         start_frame = int(self.total_frames * start_point)
-        input_setting_class = InputSettingClass(input_file_folder, input_filename, input_size, input_file='-', input_images=True, input_framerate=framerate, input_pixel_format=pixel_format)
+        input_setting_class = InputSettingClass(input_file_folder, input_filename, input_size, input_file='-', images=True, framerate=framerate, pixel_format=pixel_format)
         command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, noaudio=True, encoding_settings=encoding_settings)
         if not command_valid:
             self.failed_encode('Command not valid: '+command)
