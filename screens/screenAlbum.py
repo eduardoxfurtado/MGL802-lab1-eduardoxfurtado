@@ -1125,32 +1125,35 @@ class ScreenAlbum(Screen):
 
         del instance
         if answer == 'yes':
-            app = App.get_running_app()
-            self.viewer.stop()
-            fullpath = self.fullpath
-            filename = self.photo
-            if self.type == 'Tag':
-                app.Tag.remove(fullpath, self.target, message=True)
-                deleted = True
-            else:
-                photo_info = app.Photo.exist(fullpath)
-                deleted = app.Photo.delete_file(fullpath, filename, message=True)
-                if deleted:
-                    if photo_info:
-                        app.update_photoinfo(folders=photo_info[1])
-            if deleted:
-                app.photos.commit()
-                if len(self.photos) == 1:
-                    app.show_database()
-                else:
-                    self.next_photo()
-                    Cache.remove('kv.loader')
-                    self.cache_nearby_images()
-                    #Cache.remove('kv.image')
-                    #Cache.remove('kv.texture')
-                    self.update_tags()
-                    self.update_treeview()
+            self.delete_answer_yes()
         self.dismiss_popup()
+    
+    def delete_answer_yes(self):
+        app = App.get_running_app()
+        self.viewer.stop()
+        fullpath = self.fullpath
+        filename = self.photo
+        if self.type == 'Tag':
+            app.Tag.remove(fullpath, self.target, message=True)
+            deleted = True
+        else:
+            photo_info = app.Photo.exist(fullpath)
+            deleted = app.Photo.delete_file(fullpath, filename, message=True)
+            if deleted:
+                if photo_info:
+                    app.update_photoinfo(folders=photo_info[1])
+        if deleted:
+            app.photos.commit()
+            if len(self.photos) == 1:
+                app.show_database()
+            else:
+                self.next_photo()
+                Cache.remove('kv.loader')
+                self.cache_nearby_images()
+                #Cache.remove('kv.image')
+                #Cache.remove('kv.texture')
+                self.update_tags()
+                self.update_treeview()
 
     def current_photo_index(self):
         """Determines the index of the currently viewed photo in the album photos.
