@@ -516,7 +516,15 @@ class ScreenAlbum(Screen):
         command = 'ffmpeg -i "'+video_file+'"'+seek+' -i "'+audio_file+'" -map 0:v -map 1:a -codec copy '+audio_codec_settings+' '+audio_bitrate_settings+' -shortest "'+output_file+'"'
         return [True, command, output_filename]
 
-    def get_ffmpeg_command(self, input_folder, input_filename, output_file_folder, input_size, noaudio=False, input_images=False, input_file=None, input_framerate=None, input_pixel_format=None, encoding_settings=None, start=None, duration=None):
+    def get_ffmpeg_command(self, input_setting_class, output_file_folder, noaudio=False, encoding_settings=None, start=None, duration=None):
+        input_folder = input_setting_class.folder
+        input_filename = input_setting_class.filename
+        input_size = input_setting_class.size
+        input_images = input_setting_class.images
+        input_file = input_setting_class.file
+        input_framerate = input_setting_class.framerate
+        input_pixel_format = input_setting_class.pixel_format
+
         if not encoding_settings:
             encoding_settings = self.encoding_settings
         if encoding_settings['file_format'].lower() == 'auto':
@@ -547,71 +555,22 @@ class ScreenAlbum(Screen):
             encoding_command = encoding_settings['command_line']
             extension = containers_extensions[containers.index(file_format)]
 
-        if start is not None:
-            seek = ' -ss '+str(start)
-        else:
-            seek = ''
-        if duration is not None:
-            duration = ' -t '+str(duration)
-        else:
-            duration = ''
-        if not input_file:
-            input_file = input_folder+os.path.sep+input_filename
-        if input_framerate:
-            output_framerate = self.new_framerate(video_codec, input_framerate)
-        else:
-            output_framerate = False
-        if output_framerate:
-            framerate_setting = "-r "+str(output_framerate[0] / output_framerate[1])
-        else:
-            framerate_setting = ""
-        if input_images:
-            input_format_settings = '-f image2pipe -vcodec mjpeg ' + framerate_setting
-        else:
-            input_format_settings = ''
-        if input_pixel_format:
-            output_pixel_format = self.new_pixel_format(video_codec, input_pixel_format)
-        else:
-            output_pixel_format = False
-        if output_pixel_format:
-            pixel_format_setting = "-pix_fmt "+str(output_pixel_format)
-        else:
-            pixel_format_setting = ""
-
-        if video_codec == 'libx264':
-            speed_setting = "-preset "+encoding_speed
-        else:
-            speed_setting = ''
-
+        seek = self.set_seek(start)
+        duration = self.set_duration(duration)
+        input_file = self.set_input_file(input_file, input_folder, input_filename)
+        output_framerate = self.set_output_framerate(input_framerate, video_codec)
+        framerate_setting = self.set_framerate_setting(output_framerate)
+        input_format_settings = self.set_input_format_settings(input_images, framerate_setting)
+        output_pixel_format = self.set_output_pixel_format(input_pixel_format, video_codec)
+        pixel_format_setting = self.set_pixel_format_setting(output_pixel_format)
+        speed_setting = self.set_speed_setting(video_codec, encoding_speed)
+        audio_bitrate_settings, audio_codec_settings = self.set_audio_settings(noaudio, audio_bitrate, audio_codec)
         video_bitrate_settings = "-b:v "+video_bitrate+"k"
-        if not noaudio:
-            audio_bitrate_settings = "-b:a "+audio_bitrate+"k"
-            audio_codec_settings = "-c:a " + audio_codec + " -strict -2"
-        else:
-            audio_bitrate_settings = ''
-            audio_codec_settings = ''
         video_codec_settings = "-c:v "+video_codec
         file_format_settings = "-f "+file_format
-
-        if resize and (input_size[0] > int(resize_width) or input_size[1] > int(resize_height)):
-            resize_settings = 'scale='+resize_width+":"+resize_height
-        else:
-            resize_settings = ''
-        if deinterlace:
-            deinterlace_settings = "yadif"
-        else:
-            deinterlace_settings = ""
-        if deinterlace_settings or resize_settings:
-            filter_settings = ' -vf "'
-            if deinterlace_settings:
-                filter_settings = filter_settings+deinterlace_settings
-                if resize_settings:
-                    filter_settings = filter_settings+', '+resize_settings
-            else:
-                filter_settings = filter_settings+resize_settings
-            filter_settings = filter_settings+'" '
-        else:
-            filter_settings = ""
+        resize_settings = self.set_resize_settings(resize, input_size, resize_width, resize_height)
+        deinterlace_settings = self.set_deinterlace(deinterlace)
+        filter_settings = self.set_filter_settings(deinterlace_settings, resize_settings)
 
         if encoding_command:
             #check if encoding command is valid
@@ -619,15 +578,7 @@ class ScreenAlbum(Screen):
             if '%i' not in encoding_command:
                 return [False, 'Input file must be specified', '']
             if '%c' not in encoding_command:
-                extension = ''
-                if '-f' in encoding_command:
-                    detect_format = encoding_command[encoding_command.find('-f')+2:].strip().split(' ')[0].lower()
-                    supported_formats = fftools.get_fmts(output=True)
-                    if detect_format in supported_formats[0]:
-                        format_index = supported_formats[0].index(detect_format)
-                        extension_list = supported_formats[2][format_index]
-                        if extension_list:
-                            extension = extension_list[0]
+                extension = self.set_extension(encoding_command)
                 if not extension:
                     return [False, 'Could not determine ffmpeg container format.', '']
             output_filename = os.path.splitext(input_filename)[0]+'.'+extension
@@ -641,6 +592,105 @@ class ScreenAlbum(Screen):
             #command = 'ffmpeg '+file_format_settings+' -i "'+input_file+'"'+filter_settings+' -sn '+speed_setting+' '+video_codec_settings+' '+audio_codec_settings+' '+framerate_setting+' '+pixel_format_setting+' '+video_bitrate_settings+' '+audio_bitrate_settings+' "'+output_file+'"'
             command = 'ffmpeg'+seek+' '+input_format_settings+' -i "'+input_file+'" '+file_format_settings+' '+filter_settings+' -sn '+speed_setting+' '+video_codec_settings+' '+audio_codec_settings+' '+framerate_setting+' '+pixel_format_setting+' '+video_bitrate_settings+' '+audio_bitrate_settings+duration+' "'+output_file+'"'
         return [True, command, output_filename]
+
+    def set_seek(self,start):
+        seek = ''
+        if start is not None:
+            seek = ' -ss '+str(start)
+        return seek
+
+    def set_duration(self, duration):
+        if duration is not None:
+            duration = ' -t '+str(duration)
+        else:
+            duration = ''
+        return duration
+    
+    def set_input_file(self, input_file, input_folder, input_filename):
+        if not input_file:
+            input_file = input_folder+os.path.sep+input_filename
+        return input_file
+    
+    def set_output_framerate(self, input_framerate, video_codec):
+        output_framerate = False
+        if input_framerate:
+            output_framerate = self.new_framerate(video_codec, input_framerate)
+        return output_framerate
+
+    def set_framerate_setting(self, output_framerate): 
+        framerate_setting = ""  
+        if output_framerate:
+            framerate_setting = "-r "+str(output_framerate[0] / output_framerate[1])
+        return framerate_setting
+
+    def set_input_format_settings(self, input_images, framerate_setting):
+        input_format_settings = ''
+        if input_images:
+            input_format_settings = '-f image2pipe -vcodec mjpeg ' + framerate_setting
+        return input_format_settings
+
+    def set_output_pixel_format(self, input_pixel_format, video_codec):
+        output_pixel_format = False
+        if input_pixel_format:
+            output_pixel_format = self.new_pixel_format(video_codec, input_pixel_format)
+        return output_pixel_format
+    
+    def set_pixel_format_setting(self, output_pixel_format):
+        pixel_format_setting = ""
+        if output_pixel_format:
+            pixel_format_setting = "-pix_fmt "+str(output_pixel_format)
+        return pixel_format_setting
+
+    def set_speed_setting(self, video_codec, encoding_speed):
+        speed_setting = ''
+        if video_codec == 'libx264':
+            speed_setting = "-preset "+encoding_speed
+        return speed_setting
+
+    def set_audio_settings(self, noaudio, audio_bitrate, audio_codec):
+        audio_bitrate_settings = ''
+        audio_codec_settings = ''
+        if not noaudio:
+            audio_bitrate_settings = "-b:a "+audio_bitrate+"k"
+            audio_codec_settings = "-c:a " + audio_codec + " -strict -2"
+        return [audio_bitrate_settings, audio_codec_settings]
+
+    def set_resize_settings(self, resize, input_size, resize_width, resize_height):
+        resize_settings = ''
+        if resize and (input_size[0] > int(resize_width) or input_size[1] > int(resize_height)):
+            resize_settings = 'scale='+resize_width+":"+resize_height
+        return resize_settings
+     
+    def set_deinterlace(self, deinterlace):
+        deinterlace_settings = ""
+        if deinterlace:
+            deinterlace_settings = "yadif"
+        return deinterlace_settings
+
+    def set_filter_settings(self, deinterlace_settings, resize_settings):
+        filter_settings = ""
+        if deinterlace_settings or resize_settings:
+            filter_settings = ' -vf "'
+            if deinterlace_settings:
+                filter_settings = filter_settings+deinterlace_settings
+                if resize_settings:
+                    filter_settings = filter_settings+', '+resize_settings
+            else:
+                filter_settings = filter_settings+resize_settings
+            filter_settings = filter_settings+'" '
+        return filter_settings
+
+    def set_extension(self, encoding_command):
+        extension = ''
+        if '-f' in encoding_command:
+            detect_format = encoding_command[encoding_command.find('-f')+2:].strip().split(' ')[0].lower()
+            supported_formats = fftools.get_fmts(output=True)
+            if detect_format in supported_formats[0]:
+                format_index = supported_formats[0].index(detect_format)
+                extension_list = supported_formats[2][format_index]
+                if extension_list:
+                    extension = extension_list[0]
+        return extension
 
     def encode_process(self):
         """Uses ffmpeg command line to reencode the current video file to a new format."""
@@ -670,7 +720,9 @@ class ScreenAlbum(Screen):
         input_size = input_metadata['src_vid_size']
         input_file_folder, input_filename = os.path.split(input_file)
         output_file_folder = input_file_folder+os.path.sep+'reencode'
-        command_valid, command, output_filename = self.get_ffmpeg_command(input_file_folder, input_filename, output_file_folder, input_size, input_framerate=framerate, input_pixel_format=pixel_format, start=start_seconds, duration=duration_seconds)
+        input_file_attribute = FileAttribute(input_file_folder, input_filename)
+        input_setting_class = InputSettingClass(input_file_attribute, input_size, framerate=framerate, pixel_format=pixel_format)
+        command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, start=start_seconds, duration=duration_seconds)
         if not command_valid:
             self.cancel_encode()
             self.dismiss_popup()
@@ -678,127 +730,30 @@ class ScreenAlbum(Screen):
         print(command)
 
         output_file = output_file_folder+os.path.sep+output_filename
-        if not os.path.isdir(output_file_folder):
-            try:
-                os.makedirs(output_file_folder)
-            except:
-                self.cancel_encode()
-                self.dismiss_popup()
-                app.popup_message(text='Could not create folder for encode.', title='Warning')
-                return
-        if os.path.isfile(output_file):
-            try:
-                os.remove(output_file)
-            except:
-                self.cancel_encode()
-                self.dismiss_popup()
-                app.popup_message(text='Could not create new encode, file already exists.', title='Warning')
-                return
+        warning_create_new_encode = self.create_new_encode(app, output_file_folder, output_file)
+        if (warning_create_new_encode):
+            return
 
         #used to have 'shell=True' in arguments, is it still needed?
         self.encoding_process_thread = subprocess.Popen(command, bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
 
         # Poll process for new output until finished
-        progress = []
-        while True:
-            if self.cancel_encoding:
-                self.encoding_process_thread.kill()
-                if os.path.isfile(output_file):
-                    self.delete_output(output_file)
-                if not os.listdir(output_file_folder):
-                    os.rmdir(output_file_folder)
-                self.dismiss_popup()
-                return
-            nextline = self.encoding_process_thread.stdout.readline()
-            if nextline == '' and self.encoding_process_thread.poll() is not None:
-                break
-            if nextline.startswith('frame= '):
-                self.current_frame = int(nextline.split('frame=')[1].split('fps=')[0].strip())
-                scanning_percentage = self.current_frame / self.total_frames * 100
-                self.popup.scanning_percentage = scanning_percentage
-                #time_done = nextline.split('time=')[1].split('bitrate=')[0].strip()
-                elapsed_time = time.time() - start_time
-                time_done = time_index(elapsed_time)
-                remaining_frames = self.total_frames - self.current_frame
-                try:
-                    fps = float(nextline.split('fps=')[1].split('q=')[0].strip())
-                    seconds_left = remaining_frames / fps
-                    time_remaining = time_index(seconds_left)
-                    time_text = "  Time: "+time_done+"  Remaining: "+time_remaining
-                except:
-                    time_text = ""
-                self.popup.scanning_text = str(str(int(scanning_percentage)))+"%"+time_text
-                progress.append(self.current_frame)
-            sys.stdout.write(nextline)
-            sys.stdout.flush()
+        warning_poll_process_for_new_output_file = self.poll_process_for_new_output_file(output_file_folder, output_file)
+        if (warning_poll_process_for_new_output_file):
+            return
 
         output = self.encoding_process_thread.communicate()[0]
         exit_code = self.encoding_process_thread.returncode
 
-        error_code = ''
         if exit_code == 0:
             #encoding completed
             self.dismiss_popup()
-            good_file = True
-
-            if os.path.isfile(output_file):
-                output_video = MediaPlayer(output_file, ff_opts={'paused': True, 'ss': 1.0, 'an': True})
-                frame = None
-                while not frame:
-                    frame, value = output_video.get_frame(force_refresh=True)
-                output_metadata = output_video.get_metadata()
-                output_video.close_player()
-                output_video = None
-                if output_metadata:
-                    if self.encoding_settings['width'] and self.encoding_settings['height']:
-                        new_size = (int(self.encoding_settings['width']), int(self.encoding_settings['height']))
-                        if output_metadata['src_vid_size'] != new_size:
-                            error_code = ', Output size is incorrect'
-                            good_file = False
-                else:
-                    error_code = ', Unable to find output file metadata'
-                    good_file = False
-            else:
-                error_code = ', Output file not found'
-                good_file = False
-
-            if not good_file:
-                Clock.schedule_once(lambda x: app.message('Warning: Encoded file may be bad'+error_code))
-
-            new_original_file = input_file_folder+os.path.sep+'.originals'+os.path.sep+input_filename
-            if not os.path.isdir(input_file_folder+os.path.sep+'.originals'):
-                os.makedirs(input_file_folder+os.path.sep+'.originals')
-            new_encoded_file = input_file_folder+os.path.sep+output_filename
-            if not os.path.isfile(new_original_file) and os.path.isfile(output_file):
-                try:
-                    os.rename(input_file, new_original_file)
-                    os.rename(output_file, new_encoded_file)
-                    if not os.listdir(output_file_folder):
-                        os.rmdir(output_file_folder)
-
-                    #update screenDatabase
-                    extension = os.path.splitext(output_file)[1]
-                    new_photoinfo = list(self.photoinfo)
-                    new_photoinfo[0] = os.path.splitext(self.photoinfo[0])[0]+extension  #fix extension
-                    new_photoinfo[7] = int(os.path.getmtime(new_encoded_file))  #update modified date
-                    new_photoinfo[9] = 1  #set edited
-                    new_photoinfo[10] = new_original_file  #set original file
-                    if self.photoinfo[0] != new_photoinfo[0]:
-                        app.Photo.rename(self.photoinfo[0], new_photoinfo[0], new_photoinfo[1])
-                    app.Photo.update(new_photoinfo)
-
-                    # reload video in ui
-                    self.fullpath = local_path(new_photoinfo[0])
-                    newpath = os.path.join(local_path(new_photoinfo[2]), local_path(new_photoinfo[0]))
-                    Clock.schedule_once(lambda x: self.set_photo(newpath))
-
-                except:
-                    app.popup_message(text='Could not replace original file', title='Warning')
-                    return
-            else:
-                app.popup_message(text='Target file name already exists! Encoded file left in "/reencode" subfolder', title='Warning')
+            self.check_file(app, output_file)
+            input_file_attribute = FileAttribute(input_file, input_file_folder, input_filename)
+            output_file_attribute = FileAttribute(output_file, output_file_folder, output_filename)
+            warning_remplace_original_file = self.remplace_original_file(app, input_file_attribute, output_file_attribute)
+            if (warning_remplace_original_file):
                 return
-            Clock.schedule_once(lambda x: app.message("Completed encoding file '"+self.photo+"'"))
         else:
             self.dismiss_popup()
             if os.path.isfile(output_file):
@@ -811,6 +766,137 @@ class ScreenAlbum(Screen):
 
         #switch active video in photo list back to image
         self.show_selected()
+
+    def create_new_encode(self, app, output_file_folder, output_file):
+        if not os.path.isdir(output_file_folder):
+            try:
+                os.makedirs(output_file_folder)
+            except:
+                self.cancel_encode()
+                self.dismiss_popup()
+                app.popup_message(text='Could not create folder for encode.', title='Warning')
+                return True
+        if os.path.isfile(output_file):
+            try:
+                os.remove(output_file)
+            except:
+                self.cancel_encode()
+                self.dismiss_popup()
+                app.popup_message(text='Could not create new encode, file already exists.', title='Warning')
+                return True
+        return False
+    
+    def poll_process_for_new_output_file(self, output_file_folder, output_file):
+        progress = []
+        while True:
+            if self.cancel_encoding:
+                self.encoding_process_thread.kill()
+                if os.path.isfile(output_file):
+                    self.delete_output(output_file)
+                if not os.listdir(output_file_folder):
+                    os.rmdir(output_file_folder)
+                self.dismiss_popup()
+                return True
+            nextline = self.encoding_process_thread.stdout.readline()
+            if nextline == '' and self.encoding_process_thread.poll() is not None:
+                break
+            if nextline.startswith('frame= '):
+                self.current_frame = int(nextline.split('frame=')[1].split('fps=')[0].strip())
+                scanning_percentage = self.current_frame / self.total_frames * 100
+                self.popup.scanning_percentage = scanning_percentage
+                #time_done = nextline.split('time=')[1].split('bitrate=')[0].strip()
+                elapsed_time = time.time() - start_time
+                time_done = time_index(elapsed_time)
+                remaining_frames = self.total_frames - self.current_frame
+                self.set_time_text(remaining_frames, time_index, time_done)
+                self.popup.scanning_text = str(str(int(scanning_percentage)))+"%"+time_text
+                progress.append(self.current_frame)
+            sys.stdout.write(nextline)
+            sys.stdout.flush()
+        return False
+    
+    def set_time_text(self, remaining_frames, time_index, time_done):
+        try:
+            fps = float(nextline.split('fps=')[1].split('q=')[0].strip())
+            seconds_left = remaining_frames / fps
+            time_remaining = time_index(seconds_left)
+            time_text = "  Time: "+time_done+"  Remaining: "+time_remaining
+        except:
+            time_text = ""
+        return time_text
+    
+    def check_file(self, app, output_file):
+        good_file = True
+        error_code = ''
+        if os.path.isfile(output_file):
+            output_video = MediaPlayer(output_file, ff_opts={'paused': True, 'ss': 1.0, 'an': True})
+            frame = None
+            while not frame:
+                frame, value = output_video.get_frame(force_refresh=True)
+            output_metadata = output_video.get_metadata()
+            output_video.close_player()
+            output_video = None
+            if output_metadata:
+                if self.encoding_settings['width'] and self.encoding_settings['height']:
+                    new_size = (int(self.encoding_settings['width']), int(self.encoding_settings['height']))
+                    if output_metadata['src_vid_size'] != new_size:
+                        error_code = ', Output size is incorrect'
+                        good_file = False
+            else:
+                error_code = ', Unable to find output file metadata'
+                good_file = False
+        else:
+            error_code = ', Output file not found'
+            good_file = False
+        self.check_file_message(app, good_file, error_code)
+        
+    
+    def check_file_message(self, app, good_file, error_code):
+        if not good_file:
+            Clock.schedule_once(lambda x: app.message('Warning: Encoded file may be bad'+error_code))
+
+    def remplace_original_file(self, app, input_file_attribute, output_file_attribute):
+        input_file = input_file_attribute.file_object
+        input_file_folder = input_file_attribute.folder
+        input_filename = input_file_attribute.filename
+        output_file = output_file_attribute.file_object
+        output_file_folder = output_file_attribute.folder
+        output_filename = output_file_attribute.filename
+        new_original_file = input_file_folder+os.path.sep+'.originals'+os.path.sep+input_filename
+        if not os.path.isdir(input_file_folder+os.path.sep+'.originals'):
+            os.makedirs(input_file_folder+os.path.sep+'.originals')
+        new_encoded_file = input_file_folder+os.path.sep+output_filename
+        if not os.path.isfile(new_original_file) and os.path.isfile(output_file):
+            try:
+                os.rename(input_file, new_original_file)
+                os.rename(output_file, new_encoded_file)
+                if not os.listdir(output_file_folder):
+                    os.rmdir(output_file_folder)
+
+                #update screenDatabase
+                extension = os.path.splitext(output_file)[1]
+                new_photoinfo = list(self.photoinfo)
+                new_photoinfo[0] = os.path.splitext(self.photoinfo[0])[0]+extension  #fix extension
+                new_photoinfo[7] = int(os.path.getmtime(new_encoded_file))  #update modified date
+                new_photoinfo[9] = 1  #set edited
+                new_photoinfo[10] = new_original_file  #set original file
+                if self.photoinfo[0] != new_photoinfo[0]:
+                    app.Photo.rename(self.photoinfo[0], new_photoinfo[0], new_photoinfo[1])
+                app.Photo.update(new_photoinfo)
+
+                # reload video in ui
+                self.fullpath = local_path(new_photoinfo[0])
+                newpath = os.path.join(local_path(new_photoinfo[2]), local_path(new_photoinfo[0]))
+                Clock.schedule_once(lambda x: self.set_photo(newpath))
+
+            except:
+                app.popup_message(text='Could not replace original file', title='Warning')
+                return True
+        else:
+            app.popup_message(text='Target file name already exists! Encoded file left in "/reencode" subfolder', title='Warning')
+            return True
+        Clock.schedule_once(lambda x: app.message("Completed encoding file '"+self.photo+"'"))
+        return False
 
     def set_photo(self, photo):
         self.photo = photo
@@ -893,20 +979,11 @@ class ScreenAlbum(Screen):
         edited_filename = os.path.split(edited_file)[1]
         new_original_file = os.path.join(os.path.split(edited_file)[0], original_filename)
         if os.path.isfile(original_file):
-            if os.path.isfile(edited_file):
-                try:
-                    os.remove(edited_file)
-                except:
-                    pass
-            if os.path.isfile(edited_file):
-                app.popup_message(text='Could not restore original file', title='Warning')
+            self.remove_file(edited_file)
+            if self.catch_exception_remove(edited_file):
                 return
-            try:
-                os.rename(original_file, new_original_file)
-            except:
-                pass
-            if os.path.isfile(original_file) or not os.path.isfile(new_original_file):
-                app.popup_message(text='Could not restore original file', title='Warning')
+            self.rename_file(original_file, new_original_file)
+            if self.catch_exception_rename(original_file, new_original_file):
                 return
 
             #update photo info
@@ -948,6 +1025,31 @@ class ScreenAlbum(Screen):
             self.show_selected()
         else:
             app.popup_message(text='Could not find original file', title='Warning')
+
+    def remove_file(self, edited_file):
+        if os.path.isfile(edited_file):
+            try:
+                os.remove(edited_file)
+            except:
+                pass
+    
+    def catch_exception_remove(self, edited_file):
+        if os.path.isfile(edited_file):
+            app.popup_message(text='Could not restore original file', title='Warning')
+            return True
+        return False
+    
+    def rename_file(self, original_file, new_original_file):
+        try:
+            os.rename(original_file, new_original_file)
+        except:
+            pass
+
+    def catch_exception_rename(self, original_file, new_original_file):
+        if os.path.isfile(original_file) or not os.path.isfile(new_original_file):
+            app.popup_message(text='Could not restore original file', title='Warning')
+            return True
+        return False
 
     def set_edit_panel(self, panelname):
         """Switches the current edit panel to another.
@@ -1030,26 +1132,35 @@ class ScreenAlbum(Screen):
             pass
         else:
             if not self.popup or (not self.popup.open):
-                if key == 'left' or key == 'up':
-                    self.previous_photo()
-                if key == 'right' or key == 'down':
-                    self.next_photo()
-                if key == 'enter':
-                    if self.viewer:
-                        self.viewer.fullscreen = not self.viewer.fullscreen
-                if key == 'space':
-                    self.set_favorite()
-                if key == 'delete':
-                    self.delete()
-                if key == 'f2':
-                    self.show_info_panel()
-                if key == 'f3':
-                    self.show_edit_panel()
-                if key == 'f4':
-                    self.show_tags_panel()
+                self.arrow_key(key)
+                self.action_key(key)
+                self.function_key(key)
             elif self.popup and self.popup.open:
                 if key == 'enter':
                     self.popup.content.dispatch('on_answer', 'yes')
+
+    def arrow_key (self, key):
+        if key == 'left' or key == 'up':
+            self.previous_photo()
+        if key == 'right' or key == 'down':
+            self.next_photo()
+    
+    def function_key (self, key):
+        if key == 'f2':
+            self.show_info_panel()
+        if key == 'f3':
+            self.show_edit_panel()
+        if key == 'f4':
+            self.show_tags_panel()
+    
+    def action_key (self, key):
+        if key == 'enter':
+            if self.viewer:
+                self.viewer.fullscreen = not self.viewer.fullscreen
+        if key == 'space':
+            self.set_favorite()
+        if key == 'delete':
+            self.delete()
 
     def next_photo(self):
         """Changes the viewed photo to the next photo in the album index."""
@@ -1116,32 +1227,35 @@ class ScreenAlbum(Screen):
 
         del instance
         if answer == 'yes':
-            app = App.get_running_app()
-            self.viewer.stop()
-            fullpath = self.fullpath
-            filename = self.photo
-            if self.type == 'Tag':
-                app.Tag.remove(fullpath, self.target, message=True)
-                deleted = True
-            else:
-                photo_info = app.Photo.exist(fullpath)
-                deleted = app.Photo.delete_file(fullpath, filename, message=True)
-                if deleted:
-                    if photo_info:
-                        app.update_photoinfo(folders=photo_info[1])
-            if deleted:
-                app.photos.commit()
-                if len(self.photos) == 1:
-                    app.show_database()
-                else:
-                    self.next_photo()
-                    Cache.remove('kv.loader')
-                    self.cache_nearby_images()
-                    #Cache.remove('kv.image')
-                    #Cache.remove('kv.texture')
-                    self.update_tags()
-                    self.update_treeview()
+            self.delete_answer_yes()
         self.dismiss_popup()
+    
+    def delete_answer_yes(self):
+        app = App.get_running_app()
+        self.viewer.stop()
+        fullpath = self.fullpath
+        filename = self.photo
+        if self.type == 'Tag':
+            app.Tag.remove(fullpath, self.target, message=True)
+            deleted = True
+        else:
+            photo_info = app.Photo.exist(fullpath)
+            deleted = app.Photo.delete_file(fullpath, filename, message=True)
+            if deleted:
+                if photo_info:
+                    app.update_photoinfo(folders=photo_info[1])
+        if deleted:
+            app.photos.commit()
+            if len(self.photos) == 1:
+                app.show_database()
+            else:
+                self.next_photo()
+                Cache.remove('kv.loader')
+                self.cache_nearby_images()
+                #Cache.remove('kv.image')
+                #Cache.remove('kv.texture')
+                self.update_tags()
+                self.update_treeview()
 
     def current_photo_index(self):
         """Determines the index of the currently viewed photo in the album photos.
@@ -1241,23 +1355,7 @@ class ScreenAlbum(Screen):
         container = self.ids['photoViewerContainer']
         container.clear_widgets()
         self.photoinfo = app.session.query(Photo).filter_by(id=self.photo).first()
-        if self.photoinfo:
-            self.orientation = self.photoinfo.orientation
-        else:
-            self.orientation = 1
-            self.photoinfo = app.null_image()
-        if self.orientation == 3 or self.orientation == 4:
-            self.angle = 180
-        elif self.orientation == 5 or self.orientation == 6:
-            self.angle = 270
-        elif self.orientation == 7 or self.orientation == 8:
-            self.angle = 90
-        else:
-            self.angle = 0
-        if self.orientation in [2, 4, 5, 7]:
-            self.mirror = True
-        else:
-            self.mirror = False
+        self.set_angle_and_mirror(app, photoinfo)
 
         if self.photoinfo.is_photo():
             #a photo is selected
@@ -1290,6 +1388,26 @@ class ScreenAlbum(Screen):
         self.set_edit_panel('main')  #Clear the edit panel
         #self.ids['album'].selected = self.fullpath
 
+    def set_angle_and_mirror(self, app, photoinfo): 
+        if photoinfo:
+            self.orientation = self.photoinfo.orientation
+        else:
+            self.orientation = 1
+            self.photoinfo = app.null_image()
+        if self.orientation == 3 or self.orientation == 4:
+            self.angle = 180
+        elif self.orientation == 5 or self.orientation == 6:
+            self.angle = 270
+        elif self.orientation == 7 or self.orientation == 8:
+            self.angle = 90
+        else:
+            self.angle = 0
+        if self.orientation in [2, 4, 5, 7]:
+            self.mirror = True
+        else:
+            self.mirror = False
+
+
     def cache_nearby_images(self):
         """Determines the next and previous images in the list, and caches them to speed up browsing."""
 
@@ -1302,20 +1420,17 @@ class ScreenAlbum(Screen):
         prev_photo_info = self.photos[current_photo_index-1]
         next_photo_filename = os.path.join(next_photo_info[2], next_photo_info[0])
         prev_photo_filename = os.path.join(prev_photo_info[2], prev_photo_info[0])
-        if next_photo_filename != self.photo and os.path.splitext(next_photo_filename)[1].lower() in imagetypes:
+        
+        self.cache_nearby_images_load(next_photo, next_photo_filename)
+        self.cache_nearby_images_load(prev_photo, prev_photo_filename)
+
+    def cache_nearby_images_load(self, photo, photo_filename):
+        if photo_filename != self.photo and os.path.splitext(photo_filename)[1].lower() in imagetypes:
             try:
-                if os.path.splitext(next_photo_filename)[1].lower() == '.bmp':
-                    next_photo = ImageLoaderPIL(next_photo_filename)
+                if os.path.splitext(photo_filename)[1].lower() == '.bmp':
+                    photo = ImageLoaderPIL(photo_filename)
                 else:
-                    next_photo = Loader.image(next_photo_filename)
-            except:
-                pass
-        if prev_photo_filename != self.photo and os.path.splitext(prev_photo_filename)[1].lower() in imagetypes:
-            try:
-                if os.path.splitext(prev_photo_filename)[1].lower() == '.bmp':
-                    next_photo = ImageLoaderPIL(prev_photo_filename)
-                else:
-                    prev_photo = Loader.image(prev_photo_filename)
+                    photo = Loader.image(photo_filename)
             except:
                 pass
 
@@ -1646,58 +1761,6 @@ class ScreenAlbum(Screen):
         self.edit_panel = 'main'
         Clock.schedule_once(lambda *dt: self.update_edit_panel())
 
-    def update_edit_panel(self):
-        """Set up the edit panel with the current preset."""
-
-        if self.viewer and isfile2(self.photo):
-            self.viewer.stop()
-            if self.edit_panel_object:
-                self.edit_panel_object.save_last()
-            self.viewer.edit_mode = self.edit_panel
-            edit_panel_container = self.ids['panelEdit']
-            if self.edit_panel == 'main':
-                self.edit_panel_object = EditMain(owner=self)
-                self.edit_panel_object.update_programs()
-                self.viewer.bypass = False
-            else:
-                self.viewer.bypass = True
-                self.viewer.stop()
-                if self.edit_panel == 'color':
-                    self.edit_panel_object = EditColorImage(owner=self)
-                    self.viewer.edit_image.bind(histogram=self.edit_panel_object.draw_histogram)
-                elif self.edit_panel == 'advanced':
-                    self.edit_panel_object = EditColorImageAdvanced(owner=self)
-                    self.viewer.edit_image.bind(histogram=self.edit_panel_object.draw_histogram)
-                elif self.edit_panel == 'filter':
-                    self.edit_panel_object = EditFilterImage(owner=self)
-                elif self.edit_panel == 'border':
-                    self.edit_panel_object = EditBorderImage(owner=self)
-                elif self.edit_panel == 'denoise':
-                    if opencv:
-                        self.edit_panel_object = EditDenoiseImage(owner=self, imagefile=self.photo, image_x=self.viewer.edit_image.original_width, image_y=self.viewer.edit_image.original_height)
-                    else:
-                        self.edit_panel = 'main'
-                        app = App.get_running_app()
-                        app.message("Could Not Denoise, OpenCV Not Found")
-                elif self.edit_panel == 'crop':
-                    self.edit_panel_object = EditCropImage(owner=self, image_x=self.viewer.edit_image.original_width, image_y=self.viewer.edit_image.original_height)
-                    self.viewer.edit_image.crop_controls = self.edit_panel_object
-                elif self.edit_panel == 'rotate':
-                    self.edit_panel_object = EditRotateImage(owner=self)
-                elif self.edit_panel == 'convert':
-                    if self.view_image:
-                        self.edit_panel_object = EditConvertImage(owner=self)
-                    else:
-                        self.edit_panel_object = EditConvertVideo(owner=self)
-            edit_panel_container.change_panel(self.edit_panel_object)
-        else:
-            if self.edit_panel_object:
-                self.edit_panel_object.save_last()
-            self.viewer.edit_mode = self.edit_panel
-            edit_panel_container = self.ids['panelEdit']
-            edit_panel_container.change_panel(None)
-            self.edit_panel_object = EditNone(owner=self)
-
     def save_edit(self):
         if self.view_image:
             self.save_image()
@@ -1772,7 +1835,9 @@ class ScreenAlbum(Screen):
         duration = edit_image.length
         self.total_frames = (duration * (end_point - start_point)) * (framerate[0] / framerate[1])
         start_frame = int(self.total_frames * start_point)
-        command_valid, command, output_filename = self.get_ffmpeg_command(input_file_folder, input_filename, output_file_folder, input_size, noaudio=True, input_file='-', input_images=True, input_framerate=framerate, input_pixel_format=pixel_format, encoding_settings=encoding_settings)
+        input_file_attribute = FileAttribute('-', input_file_folder, input_filename)
+        input_setting_class = InputSettingClass(input_file_attribute, input_size, images=True, framerate=framerate, pixel_format=pixel_format)
+        command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, noaudio=True, encoding_settings=encoding_settings)
         if not command_valid:
             self.failed_encode('Command not valid: '+command)
             return
@@ -2080,6 +2145,91 @@ class ScreenAlbum(Screen):
         # all non specified sorting methods:
         return sorted(self.photos, key=lambda x: x.original_date, reverse=self.sort_reverse)
 
+    def update_edit_panel(self):
+        """Set up the edit panel with the current preset."""
+
+        if self.viewer and isfile2(self.photo):
+            self.viewer.stop()
+            if self.edit_panel_object:
+                self.edit_panel_object.save_last()
+            self.viewer.edit_mode = self.edit_panel
+            edit_panel_container = self.ids['panelEdit']
+            if self.edit_panel == 'main':
+                self.edit_panel_object = EditMain(owner=self)
+                self.edit_panel_object.update_programs()
+                self.viewer.bypass = False
+            else:
+                self.viewer.bypass = True
+                self.viewer.stop()
+                self.set_typeOf_edit_panel()
+            edit_panel_container.change_panel(self.edit_panel_object)
+        else:
+            if self.edit_panel_object:
+                self.edit_panel_object.save_last()
+            self.viewer.edit_mode = self.edit_panel
+            edit_panel_container = self.ids['panelEdit']
+            edit_panel_container.change_panel(None)
+            self.edit_panel_object = EditNone(owner=self)
+
+class ColorEditPanel(ScreenAlbum):
+    edit_panel = 'color'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditColorImage(owner=self)
+        self.viewer.edit_image.bind(histogram=self.edit_panel_object.draw_histogram)
+
+class AdvancedEditPanel(ScreenAlbum):
+    edit_panel = 'advanced'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditColorImageAdvanced(owner=self)
+        self.viewer.edit_image.bind(histogram=self.edit_panel_object.draw_histogram)
+
+class FilterEditPanel(ScreenAlbum):
+    edit_panel = 'filter'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditFilterImage(owner=self)
+
+class BorderEditPanel(ScreenAlbum):
+    edit_panel = 'border'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditBorderImage(owner=self)
+
+class DenoiseEditPanel(ScreenAlbum):
+    edit_panel = 'denoise'
+
+    def set_typeOf_edit_panel(self):
+        if opencv:
+            self.edit_panel_object = EditDenoiseImage(owner=self, imagefile=self.photo, image_x=self.viewer.edit_image.original_width, image_y=self.viewer.edit_image.original_height)
+        else:
+            self.edit_panel = 'main'
+            app = App.get_running_app()
+            app.message("Could Not Denoise, OpenCV Not Found")
+
+class CropEditPanel(ScreenAlbum):
+    edit_panel = 'crop'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditCropImage(owner=self, image_x=self.viewer.edit_image.original_width, image_y=self.viewer.edit_image.original_height)
+        self.viewer.edit_image.crop_controls = self.edit_panel_object
+
+class RotateEditPanel(ScreenAlbum):
+    edit_panel = 'rotate'
+
+    def set_typeOf_edit_panel(self):
+        self.edit_panel_object = EditRotateImage(owner=self)
+
+class ConvertEditPanel(ScreenAlbum):
+    edit_panel = 'convert'
+
+    def set_typeOf_edit_panel(self):
+        if self.view_image:
+            self.edit_panel_object = EditConvertImage(owner=self)
+        else:
+            self.edit_panel_object = EditConvertVideo(owner=self)
+
 class Album(ScreenAlbum):
     def get_photo_list(self, app):
         self.folder_title = 'Album: "'+self.target+'"'
@@ -2119,3 +2269,17 @@ class Name(ScreenAlbum):
     
     def sort_photos(self):
         return sorted(self.photos, key=lambda x: os.original_file, reverse=self.sort_reverse)
+
+class InputSettingClass(ScreenAlbum):
+    def __init__(self, file_attribute, size, images=False, framerate=None, pixel_format=None):
+        self.file_attribute = file_attribute
+        self.size = size
+        self.images = images
+        self.framerate = framerate
+        self.pixel_format = pixel_format
+
+class FileAttribute(ScreenAlbum):
+    def __init__(self, file_object = None, folder, filename):
+        self.file_object = file_object
+        self.folder = folder
+        self.filename = filename
