@@ -720,7 +720,7 @@ class ScreenAlbum(Screen):
         input_size = input_metadata['src_vid_size']
         input_file_folder, input_filename = os.path.split(input_file)
         output_file_folder = input_file_folder+os.path.sep+'reencode'
-        input_file_attribute = FileAttribute(input_filename,, input_file_folder
+        input_file_attribute = FileAttribute(input_filename, input_file_folder)
         input_setting_class = InputSettingClass(input_file_attribute, input_size, framerate=framerate, pixel_format=pixel_format)
         command_valid, command, output_filename = self.get_ffmpeg_command(input_setting_class, output_file_folder, start=start_seconds, duration=duration_seconds)
         if not command_valid:
