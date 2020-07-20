@@ -13,4 +13,5 @@ def test_geolocalisation():
     #assert localisation.province() == 'xxx'
 
     #assert str(localisation) == "Canada,\nRichelieu,\n398-310\n10e Av,\nJ3L 3P7"
+    pass
 

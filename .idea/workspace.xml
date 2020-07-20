@@ -1,7 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="4bda8878-1747-4257-91da-5b7db06211b3" name="Default Changelist" comment="" />
+    <list default="true" id="4bda8878-1747-4257-91da-5b7db06211b3" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/MGL802-lab1-eduardoxfurtado.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/MGL802-lab1-eduardoxfurtado.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/screens/screenAlbum.py" beforeDir="false" afterPath="$PROJECT_DIR$/screens/screenAlbum.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_PhotoManagerApp.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_PhotoManagerApp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_ScreenImportPreset.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_ScreenImportPreset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_dropDown.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_dropDown.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_geolocalisation.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_geolocalisation.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -16,18 +42,208 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$USER_HOME$" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/tests/screens" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RunManager" selected="Python tests.Unittests for test_screenAlbum.TestScreenAlbum.test_refresh_photolist">
+    <configuration name="Unittests for test_PhotoManagerApp.PhotoManagerTestCase.test_PhotoManager" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="MGL802-lab1-eduardoxfurtado" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_PhotoManagerApp.PhotoManagerTestCase.test_PhotoManager&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test_PhotoManagerApp.PhotoManagerTestCase.test_show_album" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="MGL802-lab1-eduardoxfurtado" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_PhotoManagerApp.PhotoManagerTestCase.test_show_album&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test_ScreenImportPreset.TestScreenImportPreset.test_ScreenImportPreset" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="MGL802-lab1-eduardoxfurtado" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_ScreenImportPreset.TestScreenImportPreset.test_ScreenImportPreset&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test_dropDown.ButtonTestCase.test_AlbumSortDropDown" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="MGL802-lab1-eduardoxfurtado" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_dropDown.ButtonTestCase.test_AlbumSortDropDown&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test_screenAlbum.TestScreenAlbum.test_refresh_photolist" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="MGL802-lab1-eduardoxfurtado" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests/screens" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_screenAlbum.TestScreenAlbum.test_refresh_photolist&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.Unittests for test_screenAlbum.TestScreenAlbum.test_refresh_photolist" />
+        <item itemvalue="Python tests.Unittests for test_ScreenImportPreset.TestScreenImportPreset.test_ScreenImportPreset" />
+        <item itemvalue="Python tests.Unittests for test_PhotoManagerApp.PhotoManagerTestCase.test_PhotoManager" />
+        <item itemvalue="Python tests.Unittests for test_PhotoManagerApp.PhotoManagerTestCase.test_show_album" />
+        <item itemvalue="Python tests.Unittests for test_dropDown.ButtonTestCase.test_AlbumSortDropDown" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="4bda8878-1747-4257-91da-5b7db06211b3" name="Default Changelist" comment="" />
+      <created>1592869676925</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1592869676925</updated>
+      <workItem from="1592869682481" duration="309000" />
+      <workItem from="1594080303741" duration="611000" />
+      <workItem from="1594438267259" duration="2075000" />
+      <workItem from="1594737269601" duration="4955000" />
+      <workItem from="1594835930537" duration="2832000" />
+      <workItem from="1594911613126" duration="2717000" />
+      <workItem from="1595122129072" duration="1066000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="2" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
   <component name="WindowStateProjectService">
-    <state x="498" y="235" key="SettingsEditor" timestamp="1592697681895">
+    <state x="890" y="469" key="#Notifications" timestamp="1594740205678">
       <screen x="84" y="0" width="1836" height="1200" />
     </state>
+    <state x="890" y="469" key="#Notifications/84.0.1836.1200@84.0.1836.1200" timestamp="1594740205678" />
+    <state x="1130" y="439" width="374" height="561" key="#com.intellij.ide.util.MemberChooser" timestamp="1594923725981">
+      <screen x="84" y="0" width="2476" height="1440" />
+    </state>
+    <state x="1130" y="439" width="374" height="561" key="#com.intellij.ide.util.MemberChooser/2560.541.1920.1200/84.0.2476.1440@84.0.2476.1440" timestamp="1594923725981" />
+    <state x="758" y="452" width="478" height="324" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1" timestamp="1592700190014">
+      <screen x="84" y="0" width="1836" height="1200" />
+    </state>
+    <state x="758" y="452" width="478" height="324" key="ANALYSIS_DLG_com.intellij.analysis.BaseAnalysisAction$1/84.0.1836.1200@84.0.1836.1200" timestamp="1592700190014" />
+    <state x="790" y="358" key="FileChooserDialogImpl" timestamp="1594739731138">
+      <screen x="84" y="0" width="1836" height="1200" />
+    </state>
+    <state x="790" y="358" key="FileChooserDialogImpl/84.0.1836.1200@84.0.1836.1200" timestamp="1594739731138" />
+    <state width="2432" height="480" key="GridCell.Tab.0.bottom" timestamp="1594910732172">
+      <screen x="82" y="0" width="4398" height="1741" />
+    </state>
+    <state width="2432" height="480" key="GridCell.Tab.0.bottom/82.0.4398.1741@82.0.4398.1741" timestamp="1594910732172" />
+    <state width="1790" height="480" key="GridCell.Tab.0.bottom/84.0.1836.1200@84.0.1836.1200" timestamp="1594841408133" />
+    <state width="2432" height="480" key="GridCell.Tab.0.center" timestamp="1594910732171">
+      <screen x="82" y="0" width="4398" height="1741" />
+    </state>
+    <state width="2432" height="480" key="GridCell.Tab.0.center/82.0.4398.1741@82.0.4398.1741" timestamp="1594910732171" />
+    <state width="1790" height="480" key="GridCell.Tab.0.center/84.0.1836.1200@84.0.1836.1200" timestamp="1594841408132" />
+    <state width="2432" height="480" key="GridCell.Tab.0.left" timestamp="1594910732171">
+      <screen x="82" y="0" width="4398" height="1741" />
+    </state>
+    <state width="2432" height="480" key="GridCell.Tab.0.left/82.0.4398.1741@82.0.4398.1741" timestamp="1594910732171" />
+    <state width="1790" height="480" key="GridCell.Tab.0.left/84.0.1836.1200@84.0.1836.1200" timestamp="1594841408131" />
+    <state width="2432" height="480" key="GridCell.Tab.0.right" timestamp="1594910732171">
+      <screen x="82" y="0" width="4398" height="1741" />
+    </state>
+    <state width="2432" height="480" key="GridCell.Tab.0.right/82.0.4398.1741@82.0.4398.1741" timestamp="1594910732171" />
+    <state width="1790" height="480" key="GridCell.Tab.0.right/84.0.1836.1200@84.0.1836.1200" timestamp="1594841408133" />
+    <state x="498" y="235" key="SettingsEditor" timestamp="1594740656547">
+      <screen x="84" y="0" width="1836" height="1200" />
+    </state>
+    <state x="641" y="282" key="SettingsEditor/2560.431.1920.1200/82.0.2478.1440@82.0.2478.1440" timestamp="1592869718889" />
     <state x="498" y="235" key="SettingsEditor/2560.431.1920.1200/84.0.1836.1200@84.0.1836.1200" timestamp="1592697681895" />
+    <state x="498" y="235" key="SettingsEditor/84.0.1836.1200@84.0.1836.1200" timestamp="1594740656547" />
+    <state x="727" y="164" width="1419" height="1137" key="find.popup" timestamp="1594910566386">
+      <screen x="82" y="0" width="4398" height="1741" />
+    </state>
+    <state x="727" y="164" width="1419" height="1137" key="find.popup/82.0.4398.1741@82.0.4398.1741" timestamp="1594910566386" />
+    <state x="706" y="208" width="592" height="783" key="find.popup/84.0.1836.1200@84.0.1836.1200" timestamp="1594841019919" />
+    <state x="843" y="372" width="307" height="454" key="refactoring.ChangeSignatureDialog" timestamp="1595170551376">
+      <screen x="84" y="0" width="1836" height="1200" />
+    </state>
+    <state x="843" y="372" width="307" height="454" key="refactoring.ChangeSignatureDialog/2560.510.1920.1200/84.0.1836.1200@84.0.1836.1200" timestamp="1595170551376" />
+    <state x="665" y="269" width="672" height="678" key="search.everywhere.popup" timestamp="1592700182308">
+      <screen x="84" y="0" width="1836" height="1200" />
+    </state>
+    <state x="665" y="269" width="672" height="678" key="search.everywhere.popup/84.0.1836.1200@84.0.1836.1200" timestamp="1592700182308" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tests/screens/test_screenAlbum.py</url>
+          <line>39</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/MGL802_lab1_eduardoxfurtado$Unittests_for_test_dropDown_ButtonTestCase_test_AlbumSortDropDown.coverage" NAME="Unittests for test_dropDown.ButtonTestCase.test_AlbumSortDropDown Coverage Results" MODIFIED="1594741879202" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/MGL802_lab1_eduardoxfurtado$Unittests_for_test_PhotoManagerApp_PhotoManagerTestCase_test_show_album.coverage" NAME="Unittests for test_PhotoManagerApp.PhotoManagerTestCase.test_show_album Coverage Results" MODIFIED="1594841309969" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/MGL802_lab1_eduardoxfurtado$Unittests_for_test_screenAlbum_TestScreenAlbum_test_refresh_photolist.coverage" NAME="Unittests for test_screenAlbum.TestScreenAlbum.test_refresh_photolist Coverage Results" MODIFIED="1595170450261" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests/screens" />
+    <SUITE FILE_PATH="coverage/MGL802_lab1_eduardoxfurtado$Unittests_for_test_PhotoManagerApp_PhotoManagerTestCase_test_PhotoManager.coverage" NAME="Unittests for test_PhotoManagerApp.PhotoManagerTestCase.test_PhotoManager Coverage Results" MODIFIED="1594841315981" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/MGL802_lab1_eduardoxfurtado$Unittests_for_test_ScreenImportPreset_TestScreenImportPreset_test_ScreenImportPreset.coverage" NAME="Unittests for test_ScreenImportPreset.TestScreenImportPreset.test_ScreenImportPreset Coverage Results" MODIFIED="1594924014929" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
   </component>
 </project>
