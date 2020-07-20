@@ -489,7 +489,13 @@ class ScreenAlbum(Screen):
             self.encodingthread = threading.Thread(target=self.encode_process)
             self.encodingthread.start()
 
-    def get_ffmpeg_audio_command(self, video_input_folder, video_input_filename, audio_input_folder, audio_input_filename, output_file_folder, encoding_settings=None, start=None):
+    def get_ffmpeg_audio_command(self, video_input_file_attribute, audio_input_file_attribute, output_file_folder, encoding_settings=None, start=None):
+        video_input_folder = video_input_file_attribute.folder
+        video_input_filename = video_input_file_attribute.filename
+        audio_input_folder = audio_input_file_attribute.folder
+        audio_input_filename = audio_input_file_attribute.filename
+        
+        
         if not encoding_settings:
             encoding_settings = self.encoding_settings
         if encoding_settings['file_format'].lower() == 'auto':
@@ -1890,7 +1896,11 @@ class ScreenAlbum(Screen):
 
         if exit_code == 0:
             #encoding first file completed, add audio
-            command_valid, command, output_temp_filename = self.get_ffmpeg_audio_command(output_file_folder, output_filename, input_file_folder, input_filename, output_file_folder, encoding_settings=encoding_settings, start=start_seconds)
+            output_file_attribute.folder = output_file_folder 
+            output_file_attribute.filename = output_filename 
+            input_file_attribute.folder = input_file_folder 
+            input_file_attribute.filename = input_filename   
+            command_valid, command, output_temp_filename = self.get_ffmpeg_audio_command(output_file_attribute, input_file_attribute, output_file_folder, encoding_settings=encoding_settings, start=start_seconds)
             output_temp_file = output_file_folder + os.path.sep + output_temp_filename
             output_temp_file_attribute.file_object = output_temp_file
             output_temp_file_attribute.filename = output_temp_filename
