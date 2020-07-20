@@ -1541,102 +1541,122 @@ class ScreenAlbum(Screen):
                 megapixels = round(((self.image_x * self.image_y) / 1000000), 2)
                 info_panel.add_node(TreeViewInfo(title='Resolution: ' + str(megapixels) + 'MP (' + resolution + ')'))
         else:
-            #Add resolution info
-            try:
-                pil_image = Image.open(self.photo)
-                exif = pil_image._getexif()
-            except:
-                pil_image = False
-                exif = []
-            if pil_image:
-                self.image_x, self.image_y = pil_image.size
-                wrapper_size = container.size
-                if wrapper_size[0] > 0:
-                    xscale = self.image_x/wrapper_size[0]
-                else:
-                    xscale = 1
-                if wrapper_size[1] > 0:
-                    yscale = self.image_y/wrapper_size[1]
-                else:
-                    yscale = 1
-                if xscale > yscale:
-                    scale_max = xscale
-                else:
-                    scale_max = yscale
-                if scale_max < 2 or to_bool(app.config.get("Settings", "lowmem")):
-                    scale_max = 2
-                self.viewer.scale_max = scale_max
-                resolution = str(self.image_x) + ' * ' + str(self.image_y)
-                megapixels = round(((self.image_x * self.image_y) / 1000000), 2)
-                info_panel.add_node(TreeViewInfo(title='Resolution: ' + str(megapixels) + 'MP (' + resolution + ')'))
-            else:
-                self.image_x = 0
-                self.image_y = 0
-
-            #Add exif info
+            info_panel, exif = add_resolution_info(app, container, info_panel)
             if exif:
-                if 271 in exif:
-                    camera_type = exif[271]+' '+exif[272]
-                    info_panel.add_node(TreeViewInfo(title='Camera: ' + camera_type))
-                if 33432 in exif:
-                    copyright = exif[33432]
-                    info_panel.add_node(TreeViewInfo(title='Copyright: ' + copyright))
-                if 36867 in exif:
-                    camera_date = exif[36867]
-                    info_panel.add_node(TreeViewInfo(title='Date Taken: ' + camera_date))
-                if 33434 in exif:
-                    exposure = exif[33434]
-                    camera_exposure = str(exposure[0]/exposure[1])+'seconds'
-                    info_panel.add_node(TreeViewInfo(title='Exposure Time: ' + camera_exposure))
-                if 37377 in exif:
-                    camera_shutter_speed = str(exif[37377][0]/exif[37377][1])
-                    info_panel.add_node(TreeViewInfo(title='Shutter Speed: ' + camera_shutter_speed))
-                if 33437 in exif:
-                    f_stop = exif[33437]
-                    camera_f = str(f_stop[0]/f_stop[1])
-                    info_panel.add_node(TreeViewInfo(title='F Stop: ' + camera_f))
-                if 37378 in exif:
-                    camera_aperture = str(exif[37378][0]/exif[37378][0])
-                    info_panel.add_node(TreeViewInfo(title='Aperture: ' + camera_aperture))
-                if 34855 in exif:
-                    camera_iso = str(exif[34855])
-                    info_panel.add_node(TreeViewInfo(title='ISO Level: ' + camera_iso))
-                if 37385 in exif:
-                    flash = bin(exif[37385])[2:].zfill(8)
-                    camera_flash = 'Not Used' if flash[1] == '0' else 'Used'
-                    info_panel.add_node(TreeViewInfo(title='Flash: ' + str(camera_flash)))
-                if 37386 in exif:
-                    focal_length = str(exif[37386][0]/exif[37386][1])+'mm'
-                    if 41989 in exif:
-                        film_focal = exif[41989]
-                        if film_focal != 0:
-                            focal_length = focal_length+' ('+str(film_focal)+' 35mm equiv.)'
-                    info_panel.add_node(TreeViewInfo(title='Focal Length: ' + focal_length))
-                if 41988 in exif:
-                    digital_zoom = exif[41988]
-                    if digital_zoom[0] != 0:
-                        digital_zoom_amount = str(round(digital_zoom[0]/digital_zoom[1], 2))+'X'
-                        info_panel.add_node(TreeViewInfo(title='Digital Zoom: ' + digital_zoom_amount))
-                if 34850 in exif:
-                    exposure_program = exif[34850]
-                    if exposure_program > 0:
-                        if exposure_program == 1:
-                            program_name = 'Manual'
-                        elif exposure_program == 2:
-                            program_name = 'Normal'
-                        elif exposure_program == 3:
-                            program_name = 'Aperture Priority'
-                        elif exposure_program == 4:
-                            program_name = 'Shutter Priority'
-                        elif exposure_program == 5:
-                            program_name = 'Creative Program'
-                        elif exposure_program == 6:
-                            program_name = 'Action Program'
-                        elif exposure_program == 7:
-                            program_name = 'Portrait'
-                        else:
-                            program_name = 'Landscape'
-                        info_panel.add_node(TreeViewInfo(title='Exposure Mode: ' + program_name))
+                info_panel = add_exit_info(info_panel, exif)
+
+    def add_resolution_info(self, app, container, info_panel):
+        try:
+            pil_image = Image.open(self.photo)
+            exif = pil_image._getexif()
+        except:
+            pil_image = False
+            exif = []
+        if pil_image:
+            self.image_x, self.image_y = pil_image.size
+            wrapper_size = container.size
+            if wrapper_size[0] > 0:
+                xscale = self.image_x/wrapper_size[0]
+            else:
+                xscale = 1
+            if wrapper_size[1] > 0:
+                yscale = self.image_y/wrapper_size[1]
+            else:
+                yscale = 1
+            if xscale > yscale:
+                scale_max = xscale
+            else:
+                scale_max = yscale
+            if scale_max < 2 or to_bool(app.config.get("Settings", "lowmem")):
+                scale_max = 2
+            self.viewer.scale_max = scale_max
+            resolution = str(self.image_x) + ' * ' + str(self.image_y)
+            megapixels = round(((self.image_x * self.image_y) / 1000000), 2)
+            info_panel.add_node(TreeViewInfo(title='Resolution: ' + str(megapixels) + 'MP (' + resolution + ')'))
+        else:
+            self.image_x = 0
+            self.image_y = 0
+        return [info_panel, exif]
+
+    def add_exit_info(self, info_panel, exif):
+        if 271 in exif:
+            camera_type = exif[271]+' '+exif[272]
+            info_panel.add_node(TreeViewInfo(title='Camera: ' + camera_type))
+        if 33432 in exif:
+            copyright = exif[33432]
+            info_panel.add_node(TreeViewInfo(title='Copyright: ' + copyright))
+        if 36867 in exif:
+            camera_date = exif[36867]
+            info_panel.add_node(TreeViewInfo(title='Date Taken: ' + camera_date))
+        if 33434 in exif:
+            exposure = exif[33434]
+            camera_exposure = str(exposure[0]/exposure[1])+'seconds'
+            info_panel.add_node(TreeViewInfo(title='Exposure Time: ' + camera_exposure))
+        if 37377 in exif:
+            camera_shutter_speed = str(exif[37377][0]/exif[37377][1])
+            info_panel.add_node(TreeViewInfo(title='Shutter Speed: ' + camera_shutter_speed))
+        if 33437 in exif:
+            f_stop = exif[33437]
+            camera_f = str(f_stop[0]/f_stop[1])
+            info_panel.add_node(TreeViewInfo(title='F Stop: ' + camera_f))
+        if 37378 in exif:
+            camera_aperture = str(exif[37378][0]/exif[37378][0])
+            info_panel.add_node(TreeViewInfo(title='Aperture: ' + camera_aperture))
+        if 34855 in exif:
+            camera_iso = str(exif[34855])
+            info_panel.add_node(TreeViewInfo(title='ISO Level: ' + camera_iso))
+        if 37385 in exif:
+            info_panel.add_node(exif_37385_info(exif))
+        if 37386 in exif:
+            info_panel.add_node(exif_37386_info(exif))
+        if 41988 in exif:
+            info_panel.add_node(exif_41988_info(exif))
+        if 34850 in exif:
+            info_panel.add_node(exif_34850_info(exif))
+        return info_panel
+
+    def exif_37385_info(self, exif):
+        flash = bin(exif[37385])[2:].zfill(8)
+        camera_flash = 'Not Used' if flash[1] == '0' else 'Used'
+        return TreeViewInfo(title='Flash: ' + str(camera_flash))
+
+    def exif_37386_info(self, exif):
+        focal_length = str(exif[37386][0]/exif[37386][1])+'mm'
+        if 41989 in exif:
+            film_focal = exif[41989]
+            if film_focal != 0:
+                focal_length = focal_length+' ('+str(film_focal)+' 35mm equiv.)'
+        return TreeViewInfo(title='Focal Length: ' + focal_length)
+    
+    def exif_41988_info(self, exif):
+        digital_zoom = exif[41988]
+        if digital_zoom[0] != 0:
+            digital_zoom_amount = str(round(digital_zoom[0]/digital_zoom[1], 2))+'X'
+            return TreeViewInfo(title='Digital Zoom: ' + digital_zoom_amount)
+        return null
+
+    def exif_34850_info(self, exif):
+        exposure_program = exif[34850]
+        if exposure_program > 0:
+            if exposure_program == 1:
+                program_name = 'Manual'
+            elif exposure_program == 2:
+                program_name = 'Normal'
+            elif exposure_program == 3:
+                program_name = 'Aperture Priority'
+            elif exposure_program == 4:
+                program_name = 'Shutter Priority'
+            elif exposure_program == 5:
+                program_name = 'Creative Program'
+            elif exposure_program == 6:
+                program_name = 'Action Program'
+            elif exposure_program == 7:
+                program_name = 'Portrait'
+            else:
+                program_name = 'Landscape'
+            return TreeViewInfo(title='Exposure Mode: ' + program_name)
+        return null
+
 
     def resort_method(self, method):
         """Sets the album sort method.
