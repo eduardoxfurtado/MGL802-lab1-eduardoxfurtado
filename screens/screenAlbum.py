@@ -1880,14 +1880,58 @@ class ScreenAlbum(Screen):
         #used to have shell=True in arguments, is it still needed?
         self.encoding_process_thread = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
         # Poll process for new output until finished
+        self.popup.scanning_text = poll_process_for_new_output()
+
+        self.encoding_process_thread.stdin.close()
+        self.encoding_process_thread.wait()
+
+        #output = self.encoding_process_thread.communicate()[0]
+        exit_code = self.encoding_process_thread.returncode
+
+        if exit_code == 0:
+            #encoding first file completed, add audio
+            command_valid, command, output_temp_filename = self.get_ffmpeg_audio_command(output_file_folder, output_filename, input_file_folder, input_filename, output_file_folder, encoding_settings=encoding_settings, start=start_seconds)
+            output_temp_file = output_file_folder + os.path.sep + output_temp_filename
+            output_temp_file_attribute.file_object = output_temp_file
+            output_temp_file_attribute.filename = output_temp_filename
+            output_file_attribute.file_object = output_file
+            output_file_attribute.folder = output_file_folder
+
+            first_encoding_file(command_valid, command, output_file_attribute, output_temp_file_attribute)
+
+            if exit_code == 0:
+                #second encoding completed
+                self.viewer.edit_image.close_video()
+
+                input_file_attribute.folder = input_file_folder
+                input_file_attribute.filename = input_filename
+
+                second_encoding_file(input_file_attribute, output_file_attribute, output_temp_file_attribute)
+            else:
+                #failed second encode, clean up
+                failed_second_encoding_file(app, output_file_attribute, output_temp_file_attribute, exit_code)
+        else:
+            #failed first encode, clean up
+            failed_first_encoding_file(output_file_attribute, exit_code)
+            
+        if self.encoding_process_thread:
+            self.encoding_process_thread.kill()
+
+        #regenerate thumbnail
+        app.Photo.thumbnail_update(self.photoinfo[0], self.photoinfo[2], self.photoinfo[7], self.photoinfo[13])
+
+        #reload photo image in ui
+        Clock.schedule_once(lambda x: self.clear_cache())
+
+        self.encoding = False
+        self.set_edit_panel('main')
+
+        #switch active video in photo list back to image
+        self.show_selected()
+
+    def poll_process_for_new_output(self, output_file_attribute, edit_image, frame_number, start_seconds, length,start_time):
         while True:
-            if self.cancel_encoding:
-                self.dismiss_popup()
-                self.encoding_process_thread.kill()
-                deleted = self.delete_output(output_file)
-                if not os.listdir(output_file_folder):
-                    os.rmdir(output_file_folder)
-                return
+            out = cancel_encoding_case(output_file_attribute)
             frameinfo = edit_image.get_converted_frame()
             if frameinfo is None:
                 #finished encoding
@@ -1896,19 +1940,7 @@ class ScreenAlbum(Screen):
             try:
                 frame.save(self.encoding_process_thread.stdin, 'JPEG')
             except:
-                if not self.cancel_encoding:
-                    lines = self.encoding_process_thread.stdout.readlines()
-                    for line in lines:
-                        sys.stdout.write(line)
-                        sys.stdout.flush()
-                    deleted = self.delete_output(output_file)
-                    if not os.listdir(output_file_folder):
-                        try:
-                            os.rmdir(output_file_folder)
-                        except:
-                            pass
-                    self.failed_encode('Ffmpeg shut down, failed encoding on frame: '+str(frame_number))
-                    return
+                out = not_cancel_encoding_case(output_file_attribute)
             #output_file = output_file_folder+os.path.sep+'image'+str(frame_number).zfill(4)+'.jpg'
             #frame.save(output_file, "JPEG", quality=95)
             frame_number = frame_number+1
@@ -1924,156 +1956,157 @@ class ScreenAlbum(Screen):
                 time_text = "  Time: " + time_done + "  Remaining: " + time_remaining
             except:
                 time_text = ""
-            self.popup.scanning_text = str(int(scanning_percentage))+"%"+time_text
+            return [str(int(scanning_percentage))+"%"+time_text, out]
 
-        self.encoding_process_thread.stdin.close()
-        self.encoding_process_thread.wait()
-
-        #output = self.encoding_process_thread.communicate()[0]
-        exit_code = self.encoding_process_thread.returncode
-
-        if exit_code == 0:
-            #encoding first file completed, add audio
-            command_valid, command, output_temp_filename = self.get_ffmpeg_audio_command(output_file_folder, output_filename, input_file_folder, input_filename, output_file_folder, encoding_settings=encoding_settings, start=start_seconds)
-            output_temp_file = output_file_folder + os.path.sep + output_temp_filename
-
-            print(command)
-            #used to have shell=True in arguments... is it still needed?
-            self.encoding_process_thread = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1)
-            #Poll process for new output until finished
-            deleted = self.delete_output(output_temp_file)
-            if not deleted:
-                self.failed_encode('File not encoded, temporary file already existed and could not be replaced')
-                return
-            while True:
-                if self.cancel_encoding:
-                    self.dismiss_popup()
-                    self.encoding_process_thread.kill()
-                    deleted = self.delete_output(output_file)
-                    deleted = self.delete_output(output_temp_file)
-                    if not os.listdir(output_file_folder):
-                        try:
-                            os.rmdir(output_file_folder)
-                        except:
-                            pass
-                    return
-
-                nextline = self.encoding_process_thread.stdout.readline()
-                if nextline == '' and self.encoding_process_thread.poll() is not None:
-                    break
-                if nextline.startswith('frame= '):
-                    self.current_frame = int(nextline.split('frame=')[1].split('fps=')[0].strip())
-                    scanning_percentage = 95 + ((self.current_frame - start_frame) / self.total_frames * 5)
-                    self.popup.scanning_percentage = scanning_percentage
-                    elapsed_time = time.time() - start_time
-
-                    try:
-                        percentage_remaining = 95 - scanning_percentage
-                        seconds_left = (elapsed_time * percentage_remaining) / scanning_percentage
-                        time_done = time_index(elapsed_time)
-                        time_remaining = time_index(seconds_left)
-                        time_text = "  Time: " + time_done + "  Remaining: " + time_remaining
-                    except:
-                        time_text = ""
-                    self.popup.scanning_text = str(int(scanning_percentage)) + "%" + time_text
-
-                sys.stdout.write(nextline)
+    def cancel_encoding_case(self, output_file_attribute):
+        if self.cancel_encoding:
+            self.dismiss_popup()
+            self.encoding_process_thread.kill()
+            deleted = self.delete_output(output_file_attribute.file_object)
+            if not os.listdir(output_file_attribute.folder):
+                os.rmdir(output_file_attribute.folder)
+            return True
+        return False
+    
+    def not_cancel_encoding_case(self, output_file_attribute):
+        if not self.cancel_encoding:
+            lines = self.encoding_process_thread.stdout.readlines()
+            for line in lines:
+                sys.stdout.write(line)
                 sys.stdout.flush()
-
-            output = self.encoding_process_thread.communicate()[0]
-            exit_code = self.encoding_process_thread.returncode
-
-            #delete output_file
-            deleted = self.delete_output(output_file)
-
-            if exit_code == 0:
-                #second encoding completed
-                self.viewer.edit_image.close_video()
-
-                new_original_file = input_file_folder+os.path.sep+'.originals'+os.path.sep+input_filename
-                if not os.path.isdir(input_file_folder+os.path.sep+'.originals'):
-                    os.makedirs(input_file_folder+os.path.sep+'.originals')
-                new_encoded_file = input_file_folder+os.path.sep+output_filename
-
-                new_photoinfo = list(self.photoinfo)
-                #check if original file has been backed up already
-                if not os.path.isfile(self.photoinfo[10]):
-                    #original file exists
-                    try:
-                        os.rename(input_file, new_original_file)
-                    except:
-                        self.failed_encode('Could not replace video, converted video left in "reencode" subfolder')
-                        return
-                    new_photoinfo[10] = new_original_file
-                else:
-                    deleted = self.delete_output(input_file)
-                    if not deleted:
-                        self.failed_encode('Could not replace video, converted video left in "reencode" subfolder')
-                        return
+            deleted = self.delete_output(output_file_attribute.file_object)
+            if not os.listdir(output_file_attribute.folder):
                 try:
-                    os.rename(output_temp_file, new_encoded_file)
-                except:
-                    self.failed_encode('Could not replace video, original file may be deleted, converted video left in "reencode" subfolder')
-                    return
-
-                if not os.listdir(output_file_folder):
-                    os.rmdir(output_file_folder)
-
-                #update screenDatabase
-                extension = os.path.splitext(new_encoded_file)[1]
-                new_photoinfo[0] = os.path.splitext(self.photoinfo[0])[0]+extension  #fix extension
-                new_photoinfo[7] = int(os.path.getmtime(new_encoded_file))  #update modified date
-                new_photoinfo[9] = 1  #set edited
-
-                # regenerate thumbnail
-                app.Photo.thumbnail_update(self.photoinfo[0], self.photoinfo[2], self.photoinfo[7], self.photoinfo[13])
-
-                if self.photoinfo[0] != new_photoinfo[0]:
-                    app.Photo.rename(self.photoinfo[Photo.FULLPATH], new_photoinfo[Photo.FULLPATH], new_photoinfo[Photo.FOLDER])
-                app.Photo.update(new_photoinfo)
-
-                self.dismiss_popup()
-
-                # reload video in ui
-                self.photoinfo = new_photoinfo
-                self.fullpath = local_path(new_photoinfo[0])
-                #self.photo = os.path.join(local_path(new_photoinfo[2]), local_path(new_photoinfo[0]))
-                Clock.schedule_once(lambda *dt: self.set_photo(os.path.join(local_path(new_photoinfo[2]), local_path(new_photoinfo[0]))))
-
-                #Clock.schedule_once(lambda *dt: self.refresh_photolist())
-                Clock.schedule_once(lambda x: app.message("Completed encoding file '"+self.photo+"'"))
-            else:
-                #failed second encode, clean up
-                self.dismiss_popup()
-                self.delete_output(output_file)
-                self.delete_output(output_temp_file)
-                if not os.listdir(output_file_folder):
-                    os.rmdir(output_file_folder)
-                app.popup_message(text='Second file not encoded, FFMPEG gave exit code '+str(exit_code), title='Warning')
-                return
-        else:
-            #failed first encode, clean up
-            self.failed_encode('First file not encoded, FFMPEG gave exit code '+str(exit_code))
-            deleted = self.delete_output(output_file)
-            if not os.listdir(output_file_folder):
-                try:
-                    os.rmdir(output_file_folder)
+                    os.rmdir(output_file_attribute.folder)
                 except:
                     pass
-        if self.encoding_process_thread:
-            self.encoding_process_thread.kill()
+            self.failed_encode('Ffmpeg shut down, failed encoding on frame: '+str(frame_number))
+            return True
+        return False
 
-        #regenerate thumbnail
+    def first_encoding_file(self, command_valid, command, output_file_attribute, output_temp_file_attribute):
+        print(command)
+        #used to have shell=True in arguments... is it still needed?
+        self.encoding_process_thread = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1)
+        #Poll process for new output until finished
+        deleted = self.delete_output(output_temp_file)
+        if not deleted:
+            self.failed_encode('File not encoded, temporary file already existed and could not be replaced')
+            return
+            
+            while True:
+                if self.cancel_encoding:
+                    cancel_first_encoding(output_file_attribute, output_temp_file_attribute)
+
+            nextline = self.encoding_process_thread.stdout.readline()
+            if nextline == '' and self.encoding_process_thread.poll() is not None:
+                break
+            if nextline.startswith('frame= '):
+                self.current_frame = int(nextline.split('frame=')[1].split('fps=')[0].strip())
+                scanning_percentage = 95 + ((self.current_frame - start_frame) / self.total_frames * 5)
+                self.popup.scanning_percentage = scanning_percentage
+                elapsed_time = time.time() - start_time
+
+                try:
+                    percentage_remaining = 95 - scanning_percentage
+                    seconds_left = (elapsed_time * percentage_remaining) / scanning_percentage
+                    time_done = time_index(elapsed_time)
+                    time_remaining = time_index(seconds_left)
+                    time_text = "  Time: " + time_done + "  Remaining: " + time_remaining
+                except:
+                    time_text = ""
+                self.popup.scanning_text = str(int(scanning_percentage)) + "%" + time_text
+
+            sys.stdout.write(nextline)
+            sys.stdout.flush()
+
+        output = self.encoding_process_thread.communicate()[0]
+        exit_code = self.encoding_process_thread.returncode
+
+        #delete output_file
+        deleted = self.delete_output(output_file_attribute.file_object)
+
+    def cancel_first_encoding(self, output_file_attribute, output_temp_file_attribute):
+        self.dismiss_popup()
+        self.encoding_process_thread.kill()
+        deleted = self.delete_output(output_file_attribute.file)
+        deleted = self.delete_output(output_temp_file_attribute.file_object)
+        if not os.listdir(output_file_attribute.folder):
+            try:
+                os.rmdir(output_file_attribute.folder)
+            except:
+                pass
+
+    def failed_first_encoding_file(self, output_file_attribute, exit_code):
+        self.failed_encode('First file not encoded, FFMPEG gave exit code '+str(exit_code))
+        deleted = self.delete_output(output_file_attribute.file_object)
+        if not os.listdir(output_file_attribute.folder):
+            try:
+                os.rmdir(output_file_attribute.folder)
+            except:
+                pass
+
+    def second_encoding_file(self, input_file_attribute, output_file_attribute, output_temp_file_attribute):
+        new_original_file = input_file_attribute.folder+os.path.sep+'.originals'+os.path.sep+input_file_attribute.filename
+        if not os.path.isdir(input_file_attribute.folder+os.path.sep+'.originals'):
+            os.makedirs(input_file_attribute.folder+os.path.sep+'.originals')
+        new_encoded_file = input_file_attribute.folder+os.path.sep+output_file_attribute.filename
+
+        new_photoinfo = list(self.photoinfo)
+        #check if original file has been backed up already
+        if not os.path.isfile(self.photoinfo[10]):
+            #original file exists
+            try:
+                os.rename(input_file_attribute.file_object, new_original_file)
+            except:
+                self.failed_encode('Could not replace video, converted video left in "reencode" subfolder')
+                return
+            new_photoinfo[10] = new_original_file
+        else:
+            deleted = self.delete_output(input_file_attribute.file_object)
+            if not deleted:
+                self.failed_encode('Could not replace video, converted video left in "reencode" subfolder')
+                return
+        try:
+            os.rename(output_temp_file_attribute.file_object, new_encoded_file)
+        except:
+            self.failed_encode('Could not replace video, original file may be deleted, converted video left in "reencode" subfolder')
+            return
+
+        if not os.listdir(output_file_attribute.folder):
+            os.rmdir(output_file_attribute.folder)
+
+        #update screenDatabase
+        extension = os.path.splitext(new_encoded_file)[1]
+        new_photoinfo[0] = os.path.splitext(self.photoinfo[0])[0]+extension  #fix extension
+        new_photoinfo[7] = int(os.path.getmtime(new_encoded_file))  #update modified date
+        new_photoinfo[9] = 1  #set edited
+
+        # regenerate thumbnail
         app.Photo.thumbnail_update(self.photoinfo[0], self.photoinfo[2], self.photoinfo[7], self.photoinfo[13])
 
-        #reload photo image in ui
-        Clock.schedule_once(lambda x: self.clear_cache())
+        if self.photoinfo[0] != new_photoinfo[0]:
+            app.Photo.rename(self.photoinfo[Photo.FULLPATH], new_photoinfo[Photo.FULLPATH], new_photoinfo[Photo.FOLDER])
+        app.Photo.update(new_photoinfo)
 
-        self.encoding = False
-        self.set_edit_panel('main')
+        self.dismiss_popup()
 
-        #switch active video in photo list back to image
-        self.show_selected()
+        # reload video in ui
+        self.photoinfo = new_photoinfo
+        self.fullpath = local_path(new_photoinfo[0])
+        #self.photo = os.path.join(local_path(new_photoinfo[2]), local_path(new_photoinfo[0]))
+        Clock.schedule_once(lambda *dt: self.set_photo(os.path.join(local_path(new_photoinfo[2]), local_path(new_photoinfo[0]))))
+
+        #Clock.schedule_once(lambda *dt: self.refresh_photolist())
+        Clock.schedule_once(lambda x: app.message("Completed encoding file '"+self.photo+"'"))
+
+    def failed_second_encoding_file(self, app, output_file_attribute, output_temp_file_attribute, exit_code):
+        self.dismiss_popup()
+        self.delete_output(output_file_attribute.file_object)
+        self.delete_output(output_temp_file_attribute.file_object)
+        if not os.listdir(output_file_attribute.folder):
+            os.rmdir(output_file_attribute.folder)
+        app.popup_message(text='Second file not encoded, FFMPEG gave exit code '+str(exit_code), title='Warning')
 
     def save_image(self):
         """Saves any temporary edits on the currently viewed image."""
@@ -2296,7 +2329,7 @@ class Name(ScreenAlbum):
     
     def sort_photos(self):
         return sorted(self.photos, key=lambda x: os.original_file, reverse=self.sort_reverse)
-        
+
 class InputSettingClass(ScreenAlbum):
     def __init__(self, file_attribute, size, images=False, framerate=None, pixel_format=None):
         self.file_attribute = file_attribute
