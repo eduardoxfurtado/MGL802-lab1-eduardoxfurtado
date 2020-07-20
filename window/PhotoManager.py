@@ -94,7 +94,7 @@ class PhotoManager(App):
     photo = StringProperty('')
     imports = []
     exports = []
-    # albums = []
+    albums = []
     programs = []
     database_path = None
     shift_pressed = BooleanProperty(False)
