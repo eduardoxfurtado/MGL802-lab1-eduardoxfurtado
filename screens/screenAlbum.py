@@ -516,7 +516,14 @@ class ScreenAlbum(Screen):
         command = 'ffmpeg -i "'+video_file+'"'+seek+' -i "'+audio_file+'" -map 0:v -map 1:a -codec copy '+audio_codec_settings+' '+audio_bitrate_settings+' -shortest "'+output_file+'"'
         return [True, command, output_filename]
 
-    def get_ffmpeg_command(self, input_setting_class, output_file_folder, noaudio=False, encoding_settings=None, start=None, duration=None):
+    def get_ffmpeg_command(self, 
+                           input_setting_class, 
+                           output_file_folder, 
+                           noaudio=False, 
+                           encoding_settings=None, 
+                           start=None, 
+                           duration=None):
+                           
         input_folder = input_setting_class.folder
         input_filename = input_setting_class.filename
         input_size = input_setting_class.size
@@ -2283,3 +2290,5 @@ class FileAttribute(ScreenAlbum):
         self.file_object = file_object
         self.folder = folder
         self.filename = filename
+
+
