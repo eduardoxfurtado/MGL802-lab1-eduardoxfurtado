@@ -1,7 +1,3 @@
 component_depth: 5
 languages:
-- name: python
-  production:
-    include:
-      - .*/screenAlbum\.py
-      - .*/screenalbum\.py
+- python
