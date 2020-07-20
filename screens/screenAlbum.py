@@ -1996,45 +1996,46 @@ class ScreenAlbum(Screen):
 
     def first_encoding_file(self, command_valid, command, output_file_attribute, output_temp_file_attribute):
         print(command)
-        #used to have shell=True in arguments... is it still needed?
-        self.encoding_process_thread = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1)
-        #Poll process for new output until finished
+        # used to have shell=True in arguments... is it still needed?
+        self.encoding_process_thread = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                                        universal_newlines=True, bufsize=1)
+        # Poll process for new output until finished
         deleted = self.delete_output(output_temp_file)
         if not deleted:
             self.failed_encode('File not encoded, temporary file already existed and could not be replaced')
             return
-            
+
             while True:
                 if self.cancel_encoding:
                     cancel_first_encoding(output_file_attribute, output_temp_file_attribute)
 
-            nextline = self.encoding_process_thread.stdout.readline()
-            if nextline == '' and self.encoding_process_thread.poll() is not None:
-                break
-            if nextline.startswith('frame= '):
-                self.current_frame = int(nextline.split('frame=')[1].split('fps=')[0].strip())
-                scanning_percentage = 95 + ((self.current_frame - start_frame) / self.total_frames * 5)
-                self.popup.scanning_percentage = scanning_percentage
-                elapsed_time = time.time() - start_time
+                nextline = self.encoding_process_thread.stdout.readline()
+                if nextline == '' and self.encoding_process_thread.poll() is not None:
+                    break
+                if nextline.startswith('frame= '):
+                    self.current_frame = int(nextline.split('frame=')[1].split('fps=')[0].strip())
+                    scanning_percentage = 95 + ((self.current_frame - start_frame) / self.total_frames * 5)
+                    self.popup.scanning_percentage = scanning_percentage
+                    elapsed_time = time.time() - start_time
 
-                try:
-                    percentage_remaining = 95 - scanning_percentage
-                    seconds_left = (elapsed_time * percentage_remaining) / scanning_percentage
-                    time_done = time_index(elapsed_time)
-                    time_remaining = time_index(seconds_left)
-                    time_text = "  Time: " + time_done + "  Remaining: " + time_remaining
-                except:
-                    time_text = ""
-                self.popup.scanning_text = str(int(scanning_percentage)) + "%" + time_text
+                    try:
+                        percentage_remaining = 95 - scanning_percentage
+                        seconds_left = (elapsed_time * percentage_remaining) / scanning_percentage
+                        time_done = time_index(elapsed_time)
+                        time_remaining = time_index(seconds_left)
+                        time_text = "  Time: " + time_done + "  Remaining: " + time_remaining
+                    except:
+                        time_text = ""
+                    self.popup.scanning_text = str(int(scanning_percentage)) + "%" + time_text
 
-            sys.stdout.write(nextline)
-            sys.stdout.flush()
+                sys.stdout.write(nextline)
+                sys.stdout.flush()
 
-        output = self.encoding_process_thread.communicate()[0]
-        exit_code = self.encoding_process_thread.returncode
+            output = self.encoding_process_thread.communicate()[0]
+            exit_code = self.encoding_process_thread.returncode
 
-        #delete output_file
-        deleted = self.delete_output(output_file_attribute.file_object)
+            # delete output_file
+            deleted = self.delete_output(output_file_attribute.file_object)
 
     def cancel_first_encoding(self, output_file_attribute, output_temp_file_attribute):
         self.dismiss_popup()
